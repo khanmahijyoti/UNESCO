@@ -1,0 +1,7 @@
+node_modules/
+dist/
+
+# NEVER COMMIT THIS. It contains the answer key — every card's slug mapped to
+# real/fake. Committing it to a repo anyone else can read ends the game.
+facilitator/
+.cert/

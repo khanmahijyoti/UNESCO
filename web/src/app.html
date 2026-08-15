@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#141414">
+<title>Unveil</title>
+<style>
+:root {
+  --bg: #f7f6f3; --surface: #fff; --ink: #16150f; --muted: #6b6a63;
+  --line: #dedcd4; --accent: #1c1b16; --shade: #efeee8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131310; --surface: #1c1c18; --ink: #f0efe8; --muted: #98968c;
+    --line: #302f29; --accent: #f0efe8; --shade: #232320;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.5;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.wrap { max-width: 34rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+
+.brand {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 1.5rem;
+}
+
+/* ---------- headline: the public half ---------- */
+.headline {
+  font-size: 1.5rem; line-height: 1.32; letter-spacing: -0.01em;
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 30rem) { .headline { font-size: 1.75rem; } }
+
+.hint {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .8rem; color: var(--muted); margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem; border-bottom: 1px solid var(--line);
+}
+
+/* ---------- buttons ---------- */
+button {
+  font: inherit; cursor: pointer; width: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  border-radius: .6rem; padding: .95rem 1.1rem;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font-size: .95rem; margin-bottom: .7rem; transition: opacity .12s;
+}
+button:active { opacity: .6; }
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+
+/* ---------- private panel ---------- */
+#clues[hidden] { display: none; }
+.role {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted); padding-bottom: .6rem; border-bottom: 1px solid var(--line);
+  margin-bottom: 1.25rem;
+}
+.clue { margin-bottom: 1.35rem; }
+.clue h3 {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; margin-bottom: .3rem;
+}
+.clue p { font-size: 1rem; }
+.privnote {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .78rem; color: var(--muted); background: var(--shade);
+  padding: .8rem .9rem; border-radius: .5rem; margin: 1.5rem 0 1rem;
+}
+
+/* ---------- audience ---------- */
+.aud li { margin: 0 0 .75rem 1.1rem; font-size: 1rem; }
+.aud .kicker { font-size: 1.15rem; margin-bottom: 1.1rem; }
+
+/* ---------- present mode ---------- */
+#present[hidden] { display: none; }
+#present {
+  position: fixed; inset: 0; z-index: 50; background: var(--bg);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 2rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
+}
+#present .headline { font-size: 1.9rem; margin: 0; }
+@media (min-width: 30rem) { #present .headline { font-size: 2.4rem; } }
+#present .exit { position: absolute; left: 1.5rem; right: 1.5rem; bottom: calc(1.5rem + env(safe-area-inset-bottom)); width: auto; }
+#present .tag {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 1.5rem;
+}
+
+/* ---------- footer ---------- */
+.foot {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-top: 2.5rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.msg { color: var(--muted); font-size: 1rem; }
+.msg strong { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <div class="brand">Unveil</div>
+  <p class="msg" id="boot">Loading…</p>
+</div>
+
+<div id="present" hidden>
+  <div class="tag">Unveil · headline</div>
+  <div class="headline" id="present-headline"></div>
+  <button class="exit" id="present-exit">Done</button>
+</div>
+
+<script>
+/* ============================================================
+   Unveil — card companion.
+
+   The deck below is a map of  sha256(slug) -> AES-GCM ciphertext,
+   where each card's key is derived from that card's own slug. A
+   player who scans one card can decrypt exactly that card. Viewing
+   source yields 36 opaque blobs and nothing else — there is no
+   manifest, no ordering, and no real/fake signal in the payload.
+
+   Facilitator-only content (the "why it works" analysis) is never
+   shipped here. It lives only in the answer key.
+   ============================================================ */
+
+const DECK = __DECK__;
+
+const $ = id => document.getElementById(id);
+const app = $("app");
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const enc = new TextEncoder();
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+const unhex = s => new Uint8Array(s.match(/../g).map(h => parseInt(h, 16)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function cardId(slug) {
+  return hex(await crypto.subtle.digest("SHA-256", enc.encode(slug + "|id"))).slice(0, 16);
+}
+
+async function decrypt(slug, payload) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(slug), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: unhex(DECK.salt), iterations: DECK.iter, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const raw = unb64(payload);
+  const plain = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: raw.slice(0, 12) }, key, raw.slice(12));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+/* ---------- views ---------- */
+
+const FOOT = `<div class="foot">Unveil · MIL training material</div>`;
+
+function viewLanding() {
+  app.innerHTML = `
+    <div class="brand">Unveil</div>
+    <p class="msg"><strong>Scan the QR code on your card.</strong></p>
+    <p class="msg" style="margin-top:1rem">This page only opens with a card. Nothing here works without one.</p>
+    ${FOOT}`;
+}
+
+function viewMissing() {
+  app.innerHTML = `
+    <div class="brand">Unveil</div>
+    <p class="msg"><strong>That card isn't in this deck.</strong></p>
+    <p class="msg" style="margin-top:1rem">Check you scanned the whole code, and that this deck is the one your cards were printed for. Ask your facilitator.</p>
+    ${FOOT}`;
+}
+
+function viewNeedsSecureContext() {
+  app.innerHTML = `
+    <div class="brand">Unveil</div>
+    <p class="msg"><strong>This page must be served over HTTPS.</strong></p>
+    <p class="msg" style="margin-top:1rem">Card contents are encrypted, and the browser will not decrypt them on an insecure origin. Opening the file directly from disk will not work — serve it from <code>localhost</code> or a deployed HTTPS URL.</p>
+    ${FOOT}`;
+}
+
+function viewAudience() {
+  app.innerHTML = `
+    <div class="brand">Unveil</div>
+    <div class="role">Audience</div>
+    <div class="aud">
+      <p class="kicker">You are the public eye. You do not pitch, and you hold no clues.</p>
+      <ul>
+        <li>Vote on every story: <strong>Publish</strong> or <strong>Reject</strong>.</li>
+        <li>One vote per pitch, on the three-count with everyone else.</li>
+        <li>You score <strong>+50</strong> for the play simply for serving, on top of your votes.</li>
+      </ul>
+      <div class="privnote">A story sounding absurd is not evidence that it is false. Trust the reasoning, not the reaction.</div>
+    </div>
+    ${FOOT}`;
+}
+
+function viewPress(card) {
+  app.innerHTML = `
+    <div class="brand">Unveil</div>
+    <div class="headline">${esc(card.headline)}</div>
+    <div class="hint">This is your story. The clues below are yours alone — never show this screen to another player.</div>
+    <button class="primary" id="btn-present">Show the headline to the table</button>
+    <button id="btn-reveal">Reveal my clues</button>
+    <div id="clues" hidden></div>
+    ${FOOT}`;
+
+  $("btn-present").onclick = () => {
+    $("present-headline").textContent = card.headline;
+    $("present").hidden = false;
+  };
+
+  $("btn-reveal").onclick = () => {
+    $("btn-reveal").remove();
+    const panel = $("clues");
+    panel.innerHTML = `
+      <div class="role">${card.type === "real" ? "Real Press" : "Rogue Press"}</div>
+      ${card.clues.map(([label, text]) => `
+        <div class="clue"><h3>${esc(label)}</h3><p>${esc(text)}</p></div>`).join("")}
+      <div class="privnote">
+        Clues are ammunition, not a script — quote them, paraphrase them, or invent around them.
+        This panel hides itself whenever you leave the page.
+      </div>
+      <button id="btn-hide">Hide clues</button>`;
+    panel.hidden = false;
+    $("btn-hide").onclick = hideClues;
+  };
+}
+
+function hideClues() {
+  const panel = $("clues");
+  if (!panel || panel.hidden) return;
+  panel.hidden = true;
+  panel.innerHTML = "";
+  const btn = document.createElement("button");
+  btn.id = "btn-reveal";
+  btn.textContent = "Reveal my clues";
+  panel.before(btn);
+  btn.onclick = () => location.reload();
+}
+
+/* Hide the private panel the moment the page is backgrounded, so the
+   clues never appear in an app-switcher thumbnail or a screenshot
+   taken from outside the app. */
+document.addEventListener("visibilitychange", () => { if (document.hidden) hideClues(); });
+window.addEventListener("pagehide", hideClues);
+
+$("present-exit").onclick = () => { $("present").hidden = true; };
+
+/* ---------- boot ---------- */
+
+async function boot() {
+  const slug = (location.hash || "").replace(/^#\/?(c\/)?/, "").trim().toLowerCase();
+  if (!slug) return viewLanding();
+  if (!window.isSecureContext || !crypto.subtle) return viewNeedsSecureContext();
+
+  let card;
+  try {
+    const blob = DECK.cards[await cardId(slug)];
+    if (!blob) return viewMissing();
+    card = await decrypt(slug, blob);
+  } catch {
+    return viewMissing();
+  }
+
+  if (card.type === "audience") viewAudience();
+  else viewPress(card);
+}
+
+window.addEventListener("hashchange", () => location.reload());
+boot();
+
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>

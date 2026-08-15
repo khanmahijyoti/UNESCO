@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Unveil — Dealer</title>
+<style>
+:root {
+  --bg:#12120f; --panel:#1b1b17; --panel2:#232320; --ink:#f2f1ea; --muted:#98968b;
+  --line:#33322b; --gold:#c9a227; --red:#c4574a; --green:#5f9c6a; --blue:#5b86b8;
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body {
+  background:var(--bg); color:var(--ink); min-height:100vh;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.5;
+}
+.wrap { max-width:66rem; margin:0 auto; padding:2rem 1.25rem 4rem; }
+
+header { display:flex; justify-content:space-between; align-items:baseline;
+         border-bottom:1px solid var(--line); padding-bottom:1rem; margin-bottom:2rem; flex-wrap:wrap; gap:.75rem; }
+h1 { font-family:Georgia,serif; font-size:1.5rem; font-weight:400; letter-spacing:.01em; }
+h1 span { color:var(--muted); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
+          display:block; margin-top:.3rem; font-family:system-ui,sans-serif; }
+.session { font-size:.78rem; color:var(--muted); text-align:right; }
+.session b { color:var(--ink); font-weight:600; }
+
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:.8rem; padding:1.5rem; margin-bottom:1.25rem; }
+.panel h2 { font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+            font-weight:600; margin-bottom:1rem; }
+.lede { color:var(--muted); font-size:.9rem; max-width:46rem; }
+
+label.count { display:block; font-size:.82rem; color:var(--muted); margin-bottom:.6rem; }
+.counts { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+.counts button { width:3.2rem; padding:.7rem 0; font-variant-numeric:tabular-nums; }
+.counts button[aria-pressed="true"] { background:var(--gold); border-color:var(--gold); color:#17170f; font-weight:700; }
+
+button {
+  font:inherit; font-size:.9rem; cursor:pointer; color:var(--ink);
+  background:var(--panel2); border:1px solid var(--line); border-radius:.5rem; padding:.8rem 1.3rem;
+  transition:background .12s,border-color .12s,opacity .12s;
+}
+button:hover { border-color:var(--muted); }
+button:active { opacity:.65; }
+button.primary { background:var(--gold); border-color:var(--gold); color:#17170f; font-weight:700; }
+button.ghost { background:transparent; color:var(--muted); }
+button:disabled { opacity:.35; cursor:not-allowed; }
+.row { display:flex; gap:.7rem; flex-wrap:wrap; align-items:center; }
+
+/* ---------- shuffle animation ---------- */
+#shuffle { display:none; height:13rem; position:relative; }
+#shuffle.on { display:block; }
+.chip {
+  position:absolute; left:50%; top:50%; width:4.4rem; height:6.6rem; margin:-3.3rem 0 0 -2.2rem;
+  border-radius:.45rem; border:1px solid #3d3a2c;
+  background:repeating-linear-gradient(45deg,#232019 0 6px,#1c1a14 6px 12px);
+  box-shadow:0 6px 18px rgba(0,0,0,.45);
+}
+.chip::after { content:""; position:absolute; inset:.5rem; border:1px solid #3d3a2c; border-radius:.25rem; }
+.stage { font-size:.78rem; color:var(--muted); text-align:center; position:absolute;
+         bottom:0; left:0; right:0; letter-spacing:.1em; text-transform:uppercase; }
+
+/* ---------- dealt hands ---------- */
+.hands { display:grid; grid-template-columns:repeat(auto-fill,minmax(11rem,1fr)); gap:1rem; }
+.hand { background:var(--panel2); border:1px solid var(--line); border-radius:.7rem;
+        padding:1rem; text-align:center; opacity:0; transform:translateY(10px); animation:in .35s forwards; }
+@keyframes in { to { opacity:1; transform:none; } }
+.hand .who { font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+.hand .qr { background:#fff; border-radius:.4rem; padding:.45rem; }
+.hand .qr svg { display:block; width:100%; height:auto; }
+.hand .slug { font-family:ui-monospace,"Courier New",monospace; font-size:.7rem; color:var(--muted); margin-top:.6rem; }
+
+/* ---------- reveal ---------- */
+.rev { border-top:1px solid var(--line); padding:.85rem 0; display:flex; gap:1rem; align-items:baseline; }
+.rev:first-child { border-top:0; }
+.rev .who { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); width:5.5rem; flex:none; }
+.rev .tag { font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700; width:6.5rem; flex:none; }
+.tag.real { color:var(--green); } .tag.fake { color:var(--red); } .tag.audience { color:var(--blue); }
+.rev .txt { font-family:Georgia,serif; font-size:.92rem; }
+.burned { margin-top:1.25rem; padding-top:1.25rem; border-top:1px dashed var(--line); color:var(--muted); font-size:.85rem; }
+
+.note { background:var(--panel2); border-left:2px solid var(--gold); padding:.85rem 1rem;
+        border-radius:0 .4rem .4rem 0; font-size:.85rem; color:var(--muted); margin-top:1.25rem; }
+.note b { color:var(--ink); }
+.warn { background:#2a1c17; border-left-color:var(--red); }
+.hide { display:none !important; }
+.score { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:.5rem; }
+.score td,.score th { border-bottom:1px solid var(--line); padding:.5rem .6rem; text-align:left; }
+.score th { font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Unveil <span>Dealer — facilitator only</span></h1>
+  <div class="session">
+    Round <b id="s-round">1</b> ·
+    Real <b id="s-real">20</b> · Rogue <b id="s-rogue">10</b> · Audience <b id="s-aud">6</b> left
+  </div>
+</header>
+
+<!-- ---------- SETUP ---------- -->
+<section class="panel" id="setup">
+  <h2>Deal a round</h2>
+  <label class="count">How many players at the table?</label>
+  <div class="counts" id="counts"></div>
+  <div class="row">
+    <button class="primary" id="deal">Shuffle &amp; deal</button>
+    <button class="ghost" id="reset">Reset session</button>
+  </div>
+  <div class="note" id="avail"></div>
+</section>
+
+<!-- ---------- SHUFFLE ---------- -->
+<section class="panel hide" id="shufflePanel">
+  <div id="shuffle"><div class="stage" id="stage">Building the pool…</div></div>
+</section>
+
+<!-- ---------- DEALT ---------- -->
+<section class="panel hide" id="dealt">
+  <h2>Dealt — each player scans only their own code</h2>
+  <p class="lede">Hand the device round, or let each player scan from where they sit. Nobody should watch anyone else scan, and nobody announces what they got.</p>
+  <div class="hands" id="hands" style="margin-top:1.25rem"></div>
+  <div class="note"><b>One card was burned face-down.</b> Neither you nor the table knows which, so the exact number of rogues this round is unknown to everyone — including you. There is always at least one.</div>
+  <div class="row" style="margin-top:1.25rem">
+    <button class="primary" id="toReveal">End round &amp; reveal</button>
+  </div>
+</section>
+
+<!-- ---------- REVEAL ---------- -->
+<section class="panel hide" id="reveal">
+  <h2>Reveal — score the round</h2>
+  <div id="revList"></div>
+  <div class="burned" id="revBurned"></div>
+  <table class="score">
+    <tr><th>Each voter, per story</th><th>Voted Publish</th><th>Voted Reject</th></tr>
+    <tr><td>The story was <b>Real</b></td><td>+50</td><td>0</td></tr>
+    <tr><td>The story was <b>Fake</b></td><td>0</td><td>+75</td></tr>
+    <tr><td>Your own story published</td><td colspan="2">Real +100 · Rogue +150 · rejected 0</td></tr>
+    <tr><td>Audience</td><td colspan="2">+50 flat for the round</td></tr>
+  </table>
+  <div class="note">Ask the debrief question players resist: <b>did anyone reject a real story purely because it sounded absurd?</b> Absurdity is not a falsity test — that is what the Real deck exists to prove.</div>
+  <div class="row" style="margin-top:1.25rem">
+    <button class="primary" id="next">Next round</button>
+  </div>
+</section>
+
+</div>
+
+<script>
+const DATA = __DATA__;
+const BASE = "__BASEURL__";
+
+/* Cards drawn per table size: [rogue, audience, real].
+   Always one more card than there are players — the extra is burned. */
+const BUILD = { 4:[2,0,3], 5:[2,1,3], 6:[2,1,4], 7:[3,1,4], 8:[3,2,4], 9:[3,2,5], 10:[4,2,5] };
+
+const $ = id => document.getElementById(id);
+const KEY = "unveil-dealer-v1";
+
+let state = load();
+let players = 5, round = null;
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.retired)) return s;
+  } catch {}
+  return { retired: [], round: 1 };
+}
+const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+
+const remaining = type =>
+  DATA.filter(c => c.type === type && !state.retired.includes(c.slug));
+
+function refresh() {
+  $("s-round").textContent = state.round;
+  $("s-real").textContent = remaining("real").length;
+  $("s-rogue").textContent = remaining("fake").length;
+  $("s-aud").textContent = remaining("audience").length;
+
+  const [r, a, re] = BUILD[players];
+  const short = [];
+  if (remaining("fake").length < r) short.push(`${r} rogue (${remaining("fake").length} left)`);
+  if (remaining("audience").length < a) short.push(`${a} audience (${remaining("audience").length} left)`);
+  if (remaining("real").length < re) short.push(`${re} real (${remaining("real").length} left)`);
+
+  const box = $("avail");
+  if (short.length) {
+    box.className = "note warn";
+    box.innerHTML = `<b>Not enough cards left for ${players} players.</b> This round needs ${short.join(", ")}. Reset the session to return every card to the deck.`;
+    $("deal").disabled = true;
+  } else {
+    box.className = "note";
+    box.innerHTML = `A ${players}-player round draws <b>${r + a + re} cards</b> — ${r} rogue, ${a} audience, ${re} real — then deals ${players} and burns one unseen. Used cards retire for the rest of the session; the burned card goes back.`;
+    $("deal").disabled = false;
+  }
+}
+
+/* Fisher-Yates over crypto randomness — the same shuffle quality you would
+   get from a well-riffled physical deck, without the riffle. */
+function shuffle(a) {
+  const out = a.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+const take = (type, n) => shuffle(remaining(type)).slice(0, n);
+
+/* ---------- player count buttons ---------- */
+$("counts").innerHTML = Object.keys(BUILD)
+  .map(n => `<button data-n="${n}" aria-pressed="${n == players}">${n}</button>`).join("");
+$("counts").onclick = e => {
+  const b = e.target.closest("button[data-n]");
+  if (!b) return;
+  players = Number(b.dataset.n);
+  [...$("counts").children].forEach(c => c.setAttribute("aria-pressed", c === b));
+  refresh();
+};
+
+/* ---------- shuffle animation ---------- */
+function animate(pool, done) {
+  const stage = $("stage");
+  const box = $("shuffle");
+  box.querySelectorAll(".chip").forEach(c => c.remove());
+  box.classList.add("on");
+
+  const chips = pool.map(() => {
+    const d = document.createElement("div");
+    d.className = "chip";
+    box.appendChild(d);
+    return d;
+  });
+
+  const place = (t, spread, rot) => chips.forEach((c, i) => {
+    const off = (i - (chips.length - 1) / 2);
+    c.style.transition = `transform ${t}ms cubic-bezier(.4,0,.2,1)`;
+    c.style.transform = `translate(${off * spread}px, ${Math.abs(off) * -2}px) rotate(${off * rot}deg)`;
+  });
+
+  place(0, 0, 0);
+  setTimeout(() => { stage.textContent = "Shuffling…"; place(380, 34, 7); }, 60);
+  setTimeout(() => place(300, 6, -2), 480);
+  setTimeout(() => place(300, 28, 5), 800);
+  setTimeout(() => { stage.textContent = "Dealing…"; place(320, 12, 0); }, 1120);
+  setTimeout(() => { box.classList.remove("on"); done(); }, 1560);
+}
+
+/* ---------- deal ---------- */
+$("deal").onclick = () => {
+  const [r, a, re] = BUILD[players];
+  const pool = shuffle([...take("fake", r), ...take("audience", a), ...take("real", re)]);
+
+  round = { dealt: pool.slice(0, players), burned: pool[players] };
+  state.retired.push(...round.dealt.map(c => c.slug));
+  save();
+
+  $("setup").classList.add("hide");
+  $("shufflePanel").classList.remove("hide");
+
+  animate(pool, () => {
+    $("shufflePanel").classList.add("hide");
+    $("hands").innerHTML = round.dealt.map((c, i) => `
+      <div class="hand" style="animation-delay:${i * 70}ms">
+        <div class="who">Player ${i + 1}</div>
+        <div class="qr">${c.qr}</div>
+        <div class="slug">${c.slug}</div>
+      </div>`).join("");
+    $("dealt").classList.remove("hide");
+    refresh();
+  });
+};
+
+/* ---------- reveal ---------- */
+$("toReveal").onclick = () => {
+  const label = t => t === "real" ? "Real Press" : t === "fake" ? "Rogue Press" : "Audience";
+  $("revList").innerHTML = round.dealt.map((c, i) => `
+    <div class="rev">
+      <div class="who">Player ${i + 1}</div>
+      <div class="tag ${c.type}">${label(c.type)}</div>
+      <div class="txt">${c.headline || "—"}</div>
+    </div>`).join("");
+
+  const b = round.burned;
+  $("revBurned").innerHTML =
+    `<b>Burned (never in play):</b> ${label(b.type)} — ${b.headline || "audience card"}. Returned to the deck.`;
+
+  $("dealt").classList.add("hide");
+  $("reveal").classList.remove("hide");
+};
+
+$("next").onclick = () => {
+  state.round++; save();
+  $("reveal").classList.add("hide");
+  $("setup").classList.remove("hide");
+  refresh();
+};
+
+$("reset").onclick = () => {
+  if (!confirm("Return all 36 cards to the deck and start a new session?")) return;
+  state = { retired: [], round: 1 };
+  save(); refresh();
+};
+
+refresh();
+</script>
+</body>
+</html>

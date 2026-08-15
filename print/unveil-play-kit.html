@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unveil — Play Kit</title>
+<style>
+/* For US Letter, change `size: A4` to `size: Letter`. */
+@page { size: A4; margin: 10mm; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: Georgia, "Times New Roman", serif; background: #f4f4f2; color: #111; }
+
+.screen-note {
+  max-width: 150mm; margin: 12mm auto; padding: 8mm;
+  background: #fff; border: 1px solid #ccc; font-size: 11pt; line-height: 1.55;
+}
+.screen-note h1 { font-size: 15pt; margin-bottom: 4mm; }
+.screen-note li { margin: 0 0 2mm 5mm; }
+
+.sheet {
+  width: 190mm; margin: 0 auto 8mm; background: #fff; padding: 6mm;
+  page-break-after: always; break-after: page;
+}
+.sheet:last-child { page-break-after: auto; break-after: auto; }
+
+h2 { font-size: 13pt; margin-bottom: 1.5mm; }
+h3 { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; letter-spacing: 0.08em;
+     text-transform: uppercase; color: #555; margin: 4mm 0 1.5mm; }
+.lede { font-size: 9pt; color: #555; font-style: italic; margin-bottom: 3mm; }
+
+table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+th, td { border: 0.4pt solid #bbb; padding: 1.6mm 2mm; text-align: left; vertical-align: middle; }
+th { font-family: Arial, Helvetica, sans-serif; font-size: 7pt; text-transform: uppercase;
+     letter-spacing: 0.04em; background: #f0f0ee; }
+td.blank { height: 7mm; }
+.num { width: 8mm; text-align: center; }
+.vote { width: 20mm; text-align: center; font-family: Arial, Helvetica, sans-serif; }
+.truth { width: 20mm; }
+.pts { width: 18mm; }
+
+/* ---------- vote slips: 2 x 2 per page ---------- */
+.slipgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.voteslip { border: 0.8pt dashed #999; padding: 4mm; }
+.voteslip .hdr { display: flex; justify-content: space-between; align-items: baseline;
+                 border-bottom: 0.8pt solid #333; padding-bottom: 1.5mm; margin-bottom: 2mm; }
+.voteslip .title { font-size: 10pt; font-weight: bold; letter-spacing: 0.03em; }
+.voteslip .meta { font-size: 7pt; color: #666; font-family: Arial, Helvetica, sans-serif; }
+.voteslip table { font-size: 7pt; }
+.voteslip th, .voteslip td { padding: 1.1mm 1.2mm; }
+.voteslip td.blank { height: 5.4mm; }
+.voteslip .foot { font-size: 6.5pt; color: #666; margin-top: 1.5mm; line-height: 1.4;
+                  font-family: Arial, Helvetica, sans-serif; }
+
+/* ---------- rules cards: 2 x 2 per page ---------- */
+.cardgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.rulecard { border: 0.8pt dashed #999; padding: 4.5mm; font-size: 7.6pt; line-height: 1.42; }
+.rulecard h4 { font-size: 10pt; margin-bottom: 0.5mm; }
+.rulecard .sub { font-family: Arial, Helvetica, sans-serif; font-size: 6pt;
+                 letter-spacing: 0.09em; text-transform: uppercase; color: #777;
+                 border-bottom: 0.5pt solid #333; padding-bottom: 1.2mm; margin-bottom: 2.5mm; }
+.rulecard ol { margin-left: 4mm; }
+.rulecard ul { margin-left: 4mm; list-style: none; }
+.rulecard ul li:before { content: "— "; color: #888; }
+.rulecard li { margin-bottom: 1.2mm; }
+.rulecard table { font-size: 6.8pt; margin: 1.5mm 0; }
+.rulecard th, .rulecard td { padding: 0.8mm 1.2mm; }
+.rulecard .note { font-size: 6.6pt; color: #666; font-style: italic; margin-top: 2mm; }
+.rulecard .stamp { font-family: Arial, Helvetica, sans-serif; font-size: 6pt;
+                   letter-spacing: 0.08em; text-transform: uppercase; background: #222;
+                   color: #fff; padding: 0.8mm 2mm; display: inline-block; margin-bottom: 2mm; }
+
+@media print { body { background: #fff; } .screen-note { display: none; } .sheet { margin: 0; } }
+</style>
+</head>
+<body>
+
+<div class="screen-note">
+  <h1>Unveil — play kit</h1>
+  <p>Print at <b>100% scale</b>, margins minimum, background graphics <b>on</b> (the dealer card
+     uses a dark label). Pages:</p>
+  <ul>
+    <li><b>1–2 —</b> Vote slips, 4 per page. One per player <i>per play</i>. Print 4 pages for a
+        5-player / 2-play workshop; more for larger tables.</li>
+    <li><b>3 —</b> Player rules cards, 4 per page. One per player. <b>Contains no build table.</b></li>
+    <li><b>4 —</b> Dealer / facilitator card. <b>Print one, and keep it off the table.</b></li>
+    <li><b>5 —</b> Facilitator score sheet. One per session.</li>
+  </ul>
+</div>
+
+<!-- ============================ VOTE SLIPS ============================ -->
+<div class="sheet">
+  <h2>Vote slips</h2>
+  <p class="lede">Cut on the dashed lines. Eight story rows covers the largest table (10 players ≈ 8 pitches).</p>
+  <div class="slipgrid" id="slips1"></div>
+</div>
+<div class="sheet">
+  <div class="slipgrid" id="slips2"></div>
+</div>
+
+<!-- ============================ PLAYER RULES ============================ -->
+<div class="sheet">
+  <h2>Player rules cards</h2>
+  <p class="lede">One per player. Cut on the dashed lines.</p>
+  <div class="cardgrid" id="playercards"></div>
+</div>
+
+<!-- ============================ DEALER CARD ============================ -->
+<div class="sheet">
+  <h2>Dealer / facilitator card</h2>
+  <p class="lede">Print one. This card carries the build table — it must never sit where players can read it.</p>
+  <div class="cardgrid">
+    <div class="rulecard" style="grid-column: span 2; font-size: 8.4pt;">
+      <span class="stamp">Dealer only — do not leave on the table</span>
+      <h4>Unveil — building the deck</h4>
+      <div class="sub">Build one extra · deal N · burn one unseen</div>
+
+      <ol>
+        <li>Draw the <b>build</b> for your player count, <b>blind</b>, from each of the three labelled stacks.</li>
+        <li>Shuffle the build together.</li>
+        <li>Deal one sleeved pair to each player.</li>
+        <li><b>Burn the last card face-down without looking at it.</b> Set it aside untouched.</li>
+        <li>Randomise who starts. Do not use seat order twice running.</li>
+      </ol>
+
+      <p class="note">The burn is the randomiser. It exists so that <i>you</i> do not know the exact
+      rogue count either — you know the pool, not the deal. Never look at the burned card until cleanup.</p>
+
+      <table>
+        <tr><th>Players</th><th>Build</th><th>Rogue</th><th>Audience</th><th>Real</th><th>Rogues actually dealt</th></tr>
+        <tr><td>4</td><td>5</td><td>2</td><td>0</td><td>3</td><td>1–2</td></tr>
+        <tr><td>5</td><td>6</td><td>2</td><td>1</td><td>3</td><td>1–2</td></tr>
+        <tr><td>6</td><td>7</td><td>2</td><td>1</td><td>4</td><td>1–2</td></tr>
+        <tr><td>7</td><td>8</td><td>3</td><td>1</td><td>4</td><td>2–3</td></tr>
+        <tr><td>8</td><td>9</td><td>3</td><td>2</td><td>4</td><td>2–3</td></tr>
+        <tr><td>9</td><td>10</td><td>3</td><td>2</td><td>5</td><td>2–3</td></tr>
+        <tr><td>10</td><td>11</td><td>4</td><td>2</td><td>5</td><td>3–4</td></tr>
+      </table>
+
+      <p class="note">Every row survives the burn with at least one rogue in play. A rogue-free play
+      cannot happen. Tell players only that — never the number.</p>
+
+      <h3 style="margin-top:3mm">At cleanup</h3>
+      <ul>
+        <li><b>Every dealt card retires</b> for the rest of the session — press pairs and audience cards alike.
+            A redealt headline is a dead card: its truth is already public.</li>
+        <li><b>File the burned card yourself, privately.</b> Do not turn it face-up in front of the table —
+            that confirms the exact composition of the play just finished.</li>
+        <li>Re-pair slips to clue cards using the <b>answer key</b> (headline → code). Slips carry no code.</li>
+      </ul>
+
+      <h3 style="margin-top:3mm">How many plays you have</h3>
+      <p style="font-size:7.4pt">The <b>Rogue stack (10 cards) runs out first at nearly every table size</b> — it is the
+      binding constraint, not the Real stack. Roughly: <b>4–6 players ≈ 6 plays · 7 players ≈ 4 ·
+      8–9 players ≈ 3 (audience stack binds) · 10 players ≈ 3</b>. At 7+ players the box does not hold
+      a 1,000-point evening; cap the target at <b>800</b>.</p>
+
+      <h3 style="margin-top:3mm">Debrief — two minutes after each reveal</h3>
+      <ul>
+        <li>Which clue type persuaded you — Precedent, Context, or Defense? <i>Fabrications lean hardest on
+            Precedent: "this sort of thing happens" is not evidence that</i> this <i>happened.</i></li>
+        <li>Did anyone publish a fake because it confirmed something they already believed?</li>
+        <li><b>Did anyone reject a real story purely because it sounded absurd?</b> Ask this one every single
+            time. It is the question players resist, and the one the Real database exists to force.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ SCORE SHEET ============================ -->
+<div class="sheet">
+  <h2>Facilitator score sheet</h2>
+  <p class="lede">One number per player per play, called out after neighbour-scoring. Workshop target 400 · full evening 1,000 (800 at 7+ players).</p>
+  <table id="scoresheet"></table>
+
+  <h3>Playtest 1 — does the bluffing work?</h3>
+  <table>
+    <tr><th style="width:40%">Question</th><th>Play 1</th><th>Play 2</th><th>Play 3</th></tr>
+    <tr><td>Rogues dealt</td><td class="blank"></td><td></td><td></td></tr>
+    <tr><td>Rogues successfully published</td><td class="blank"></td><td></td><td></td></tr>
+    <tr><td>Real stories rejected</td><td class="blank"></td><td></td><td></td></tr>
+  </table>
+  <p class="lede" style="margin-top:2mm">If rogues never publish, the fabrications are too weak or the table is too paranoid.
+     If rogues always publish, Real cards aren't giving journalists enough to defend with.</p>
+
+  <h3>Playtest 2 — does the scoring reward the right behaviour?</h3>
+  <table>
+    <tr><th style="width:40%">Check</th><th>Play 1</th><th>Play 2</th><th>Play 3</th></tr>
+    <tr><td>Did the top scorer discriminate, or publish everything?</td><td class="blank"></td><td></td><td></td></tr>
+    <tr><td>Score of a hypothetical publish-everything voter</td><td class="blank"></td><td></td><td></td></tr>
+    <tr><td>Where did the Audience player finish?</td><td class="blank"></td><td></td><td></td></tr>
+  </table>
+  <p class="lede" style="margin-top:2mm">If the thoughtless baseline stays competitive, raise the fake-catch bonus above +75
+     or move the build composition closer to even. If Audience players finish near the bottom despite the
+     +50, switch to scoring their votes at 1.5×.</p>
+</div>
+
+<script>
+const STORY_ROWS = 8;
+
+function voteSlip() {
+  let rows = "";
+  for (let i = 1; i <= STORY_ROWS; i++) {
+    rows += `<tr><td class="num">${i}</td><td class="blank"></td>
+             <td class="vote">P &nbsp;/&nbsp; R</td><td class="truth"></td><td class="pts"></td></tr>`;
+  }
+  return `<div class="voteslip">
+    <div class="hdr">
+      <span class="title">UNVEIL</span>
+      <span class="meta">Name ______________  ·  Play ____</span>
+    </div>
+    <table>
+      <tr><th class="num">#</th><th>Headline</th><th class="vote">My vote</th>
+          <th class="truth">Truth</th><th class="pts">Points</th></tr>
+      ${rows}
+      <tr><td colspan="4" style="text-align:right;font-weight:bold">Total this play</td><td class="pts"></td></tr>
+    </table>
+    <div class="foot">
+      Fill <b>Headline</b> + <b>My vote</b> as you play.<br>
+      At reveal: <b>pass this slip one seat left.</b> You score your neighbour's, not your own.<br>
+      Real → published +50 / rejected 0 &nbsp;·&nbsp; Fake → published 0 / rejected +75<br>
+      Your own pitch: Real +100 if published · Rogue +150 if published &nbsp;·&nbsp; Audience +50 flat.
+    </div>
+  </div>`;
+}
+
+function playerCard() {
+  return `<div class="rulecard">
+    <h4>Unveil</h4>
+    <div class="sub">Player card</div>
+
+    <b>Your turn</b>
+    <ol>
+      <li>Lay your <b>headline slip face-up</b> in the centre. It stays there all play.</li>
+      <li>Pitch it using your three clues. Quote them, paraphrase them, invent around them —
+          they are ammunition, not a script.</li>
+      <li>The table gets <b>90 seconds</b> of questions.</li>
+      <li><b>Never show your clue card.</b> It carries your role.</li>
+    </ol>
+
+    <b>Voting</b>
+    <ul>
+      <li>Everyone except the presenter votes, simultaneously, thumbs up/down on a three-count.</li>
+      <li>Strict majority publishes. <b>Ties reject.</b></li>
+      <li>Record your own vote on your slip as you go.</li>
+    </ul>
+
+    <b>Scoring — every story is scored, published or not</b>
+    <table>
+      <tr><th>The story was…</th><th>You said Publish</th><th>You said Reject</th></tr>
+      <tr><td><b>Real</b></td><td>+50</td><td>0</td></tr>
+      <tr><td><b>Fake</b></td><td>0</td><td>+75</td></tr>
+    </table>
+    <ul>
+      <li>Your own pitch published: <b>Real +100 · Rogue +150</b>.</li>
+      <li>Audience: <b>+50</b> for the play, plus your votes.</li>
+    </ul>
+
+    <p class="note">You are scored on your own judgement, not the table's verdict — being outvoted
+    while right still pays. At reveal, pass your slip one seat left and score your neighbour's.</p>
+    <p class="note"><b>At least one rogue is always in play.</b> How many varies, and nobody at the
+    table knows the number — not even the dealer.</p>
+  </div>`;
+}
+
+document.getElementById("slips1").innerHTML = voteSlip().repeat(4);
+document.getElementById("slips2").innerHTML = voteSlip().repeat(4);
+document.getElementById("playercards").innerHTML = playerCard().repeat(4);
+
+let head = "<tr><th style='width:44mm'>Player</th>";
+for (let p = 1; p <= 5; p++) head += `<th>Play ${p}</th>`;
+head += "<th>Running total</th></tr>";
+let body = "";
+for (let r = 0; r < 10; r++) {
+  body += "<tr><td class='blank'></td>" + "<td></td>".repeat(5) + "<td></td></tr>";
+}
+document.getElementById("scoresheet").innerHTML = head + body;
+</script>
+</body>
+</html>

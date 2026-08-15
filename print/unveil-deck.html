@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unveil — Printable Deck</title>
+<style>
+/* ---------------------------------------------------------------
+   PAPER SIZE: A4 by default.
+   For US Letter, change `size: A4` to `size: Letter` on the line below.
+   Print at 100% scale / "Actual size". Do NOT use "Fit to page" —
+   it changes the card dimensions and pairs will not match sleeves.
+   --------------------------------------------------------------- */
+@page { size: A4; margin: 8mm; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  background: #f4f4f2;
+  color: #111;
+}
+
+.screen-note {
+  max-width: 150mm; margin: 12mm auto; padding: 8mm;
+  background: #fff; border: 1px solid #ccc; font-size: 11pt; line-height: 1.5;
+}
+.screen-note h1 { font-size: 15pt; margin-bottom: 4mm; }
+.screen-note li { margin-left: 5mm; margin-bottom: 1.5mm; }
+
+.sheet {
+  width: 194mm;
+  margin: 0 auto 8mm;
+  background: #fff;
+  display: grid;
+  gap: 0;
+  page-break-after: always;
+  break-after: page;
+}
+.sheet:last-child { page-break-after: auto; break-after: auto; }
+
+.sheet-slips { grid-template-columns: 70mm 70mm; grid-auto-rows: 45mm; }
+.sheet-cards { grid-template-columns: 70mm 70mm; grid-auto-rows: 120mm; }
+
+/* ---------- shared piece styling ----------
+   Real and Rogue pieces MUST render through the identical rule set.
+   There is deliberately no `.real` or `.rogue` selector anywhere in
+   this stylesheet. Do not add one. */
+.piece {
+  border: 1px dashed #bbb;
+  padding: 5mm;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------- headline slip (public — laid face-up on the table) ---------- */
+.slip .headline {
+  flex: 1;
+  font-size: 10.5pt;
+  line-height: 1.32;
+  display: flex;
+  align-items: center;
+}
+.slip .foot {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 5pt;
+  letter-spacing: 0.06em;
+  color: #9a9a9a;
+  text-transform: uppercase;
+  padding-top: 1.5mm;
+}
+.slip-blank .headline {
+  font-style: italic; color: #666; font-size: 10pt; justify-content: center;
+}
+
+/* ---------- clue card (private — never shown until reveal) ---------- */
+.card .ref {
+  font-size: 7pt;
+  line-height: 1.3;
+  color: #444;
+  padding-bottom: 2mm;
+  border-bottom: 0.4pt solid #ccc;
+  margin-bottom: 2.5mm;
+}
+.card .clues { flex: 1; }
+.card .clue { margin-bottom: 2.8mm; font-size: 8pt; line-height: 1.36; }
+.card .clue b {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6.5pt;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5mm;
+}
+.card .foot {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6pt;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a7a7a;
+  border-top: 0.4pt solid #ccc;
+  padding-top: 1.5mm;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ---------- audience card ---------- */
+.card .aud-role {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt; letter-spacing: 0.08em; text-transform: uppercase;
+  padding-bottom: 2mm; border-bottom: 0.4pt solid #ccc; margin-bottom: 3mm;
+}
+.card .aud-body { flex: 1; font-size: 9pt; line-height: 1.5; }
+.card .aud-body li { margin: 0 0 2mm 4mm; }
+
+/* ---------- answer key ---------- */
+.keysheet { width: 194mm; margin: 0 auto; background: #fff; padding: 6mm; }
+.keysheet h2 { font-size: 13pt; margin-bottom: 2mm; }
+.keysheet .warn {
+  font-family: Arial, Helvetica, sans-serif; font-size: 8pt;
+  background: #eee; padding: 2mm 3mm; margin-bottom: 4mm; letter-spacing: 0.03em;
+}
+.keysheet table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.keysheet td, .keysheet th {
+  border-bottom: 0.4pt solid #ddd; padding: 1.2mm 2mm; text-align: left; vertical-align: top;
+}
+.keysheet th { font-family: Arial, Helvetica, sans-serif; font-size: 7pt; text-transform: uppercase; }
+.keysheet .code { font-family: "Courier New", monospace; font-weight: bold; width: 12mm; }
+.keysheet .verdict { width: 20mm; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }
+
+@media print {
+  body { background: #fff; }
+  .screen-note { display: none; }
+  .sheet { margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="screen-note">
+  <h1>Unveil — printable deck</h1>
+  <p>Press <b>Ctrl/Cmd + P</b>. In the print dialog set:</p>
+  <ul>
+    <li><b>Scale: 100%</b> (or "Actual size"). Never "Fit to page" — it resizes the cards.</li>
+    <li><b>Margins: none/minimum</b>, background graphics <b>off</b>.</li>
+    <li>Print <b>single-sided</b>. Backs are handled by opaque sleeves, not printing.</li>
+  </ul>
+  <p style="margin-top:4mm"><b>Pages 1–3</b> are the 36 headline slips (70 × 45 mm).<br>
+  <b>Pages 4–12</b> are the 36 clue &amp; audience cards (70 × 120 mm).<br>
+  <b>Final page</b> is the facilitator answer key — <b>do not print it with the deck if a player is at the printer.</b></p>
+  <p style="margin-top:4mm">Cut on the dashed lines. Every piece carries the same footer line and the same
+  typography; nothing on a face distinguishes a verified story from a fabricated one except the words themselves.</p>
+</div>
+
+<div id="out"></div>
+
+<script>
+/* =================================================================
+   CARD DATA — single source of truth for the deck.
+   Edit text here and reprint; nothing else needs to change.
+
+   `code` is an opaque pairing code printed on both halves of a pair.
+   It exists ONLY so the facilitator can re-pair the deck at cleanup.
+   The codes are deliberately scrambled: they encode no ordering and
+   no real/fake signal. If you add cards, pick codes that continue
+   to encode nothing.
+   ================================================================= */
+
+const DATA = [
+/* ---------- VERIFIED (20) ---------- */
+{code:"M4", type:"real", headline:"A hospital itemised a new father's bill with a $39.35 charge for “skin to skin after C-section” — a fee for holding his own newborn.", clues:[
+ ["Precedent","Itemised hospital bills in private healthcare systems routinely contain micro-charges for standard nursing support that patients never review line by line."],
+ ["Context","The father posted a photo of the receipt in 2016. The hospital confirmed the charge, explaining it covered the extra nurse required to monitor the infant in theatre."],
+ ["Defense","It sounds like satire precisely because billing has reached the point of itemising a parent holding their child. The hospital's own defence of the charge is what makes it credible."]]},
+
+{code:"B9", type:"real", headline:"Scientists taught goldfish to drive a motorised robotic vehicle across a room toward targeted food rewards on land.", clues:[
+ ["Precedent","Behavioural neuroscientists routinely test spatial mapping across species using land-based apparatus to separate locomotion mechanics from pure navigation skill."],
+ ["Context","Published in 2022 by researchers at an Israeli university, using a “fish-operated vehicle” — a tank on wheels that moved according to where the fish swam."],
+ ["Defense","Frame it as legitimate ethology: the researchers isolated the fish's ability to navigate visually toward a target in an environment its species never evolved for."]]},
+
+{code:"X7", type:"real", headline:"A commercial airliner was delayed for hours because a swarm of roughly 20,000 bees settled on the plane's wing.", clues:[
+ ["Precedent","Aircraft are uniquely vulnerable to wildlife anomalies. Ground crews handle bird strikes constantly, but a swarm settling on an aerodynamic surface halts everything."],
+ ["Context","It happened at a Houston airport gate in 2024. Staff could not simply spray them — a beekeeper was called to relocate the swarm intact."],
+ ["Defense","A queen had likely landed on the warm wing and the colony followed her. No airline will taxi with 20,000 insects on a control surface."]]},
+
+{code:"T3", type:"real", headline:"Venice banned tourists from feeding pigeons in St Mark's Square, shutting down the birdseed vendors who had operated there for generations.", clues:[
+ ["Precedent","Historic European tourist sites absorb millions in structural damage and cleaning costs annually from invasive urban bird populations."],
+ ["Context","The ban took effect in 2008. Officials cited the corrosive damage pigeon droppings inflict on marble and the cost of restoring the Basilica's stonework."],
+ ["Defense","The city weighed the cleaning bill against the tourism value of the birds and found the pigeons were a net loss. Heritage economics, not whimsy."]]},
+
+{code:"J5", type:"real", headline:"The Australian military deployed soldiers with machine guns against a population of emus, and withdrew in defeat.", clues:[
+ ["Precedent","Interwar agricultural governments treated crop-destroying wildlife as a logistics problem and reached for military solutions when civilian control failed."],
+ ["Context","In 1932, Western Australian wheat farmers petitioned for help against roughly 20,000 emus. Soldiers with Lewis guns were sent; the operation was called off."],
+ ["Defense","Lean on the specific detail — the birds dispersed into small groups, defeating weapons designed for massed targets. Documented military history, not folklore."]]},
+
+{code:"C2", type:"real", headline:"A tavern in Japan employs macaque monkeys as waiters, who deliver drinks to customers and are paid in soybeans.", clues:[
+ ["Precedent","Japan has a long tradition of trained-monkey performance, and animal-welfare rules there set working-hour limits that the tavern openly observes."],
+ ["Context","The Kayabukiya Tavern in Utsunomiya has done this for years. The monkeys wear uniforms, carry hot towels and drink orders, and work legally restricted short shifts."],
+ ["Defense","Point at the regulatory detail. A fabricated story would not include working-hour limits — the mundane bureaucracy is the tell that it is real."]]},
+
+{code:"H3", type:"real", headline:"A storage tank burst in Boston and sent a wave of molasses through the streets at around 35 km/h, killing 21 people.", clues:[
+ ["Precedent","Early-20th-century industrial tanks were built without engineering review. Catastrophic failure of bulk liquid storage was a recognised hazard of the era."],
+ ["Context","January 1919, in the North End. The tank held around 2.3 million gallons. The resulting lawsuit became a landmark case in industrial safety regulation."],
+ ["Defense","Argue from the physics: molasses is far denser than water, so the wave carried enormous momentum. The absurdity of the substance says nothing about the deaths."]]},
+
+{code:"W8", type:"real", headline:"New Zealand passed a law granting a river the same legal rights as a human being, with appointed guardians who can sue on its behalf.", clues:[
+ ["Precedent","Legal systems already grant personhood to non-humans — corporations have held it for over a century."],
+ ["Context","The Whanganui River received legal personhood in 2017, concluding one of the country's longest-running Māori legal claims. Two guardians represent it."],
+ ["Defense","Reframe it as property law rather than mysticism: personhood gives the river standing in court, which no environmental statute had managed to provide."]]},
+
+{code:"D4", type:"real", headline:"In Switzerland it is illegal to keep a single guinea pig, because solitude is considered a form of animal abuse.", clues:[
+ ["Precedent","Several European states regulate the psychological welfare of pets, not merely their physical care."],
+ ["Context","Swiss animal-welfare rules classify guinea pigs as social animals that must be kept in pairs. This created a small industry renting companions for bereaved survivors."],
+ ["Defense","Lead with the rent-a-guinea-pig detail. It sounds like a joke, which is why players assume it is fabricated — but it is a direct market response to the regulation."]]},
+
+{code:"Z5", type:"real", headline:"Denmark maintains an official government list of approved baby names, and parents wanting anything else must apply for permission.", clues:[
+ ["Precedent","Naming law is a real and unglamorous branch of civil administration across the Nordic countries and Iceland."],
+ ["Context","The list runs to tens of thousands of pre-approved names. Applications outside it are reviewed for whether the name would subject the child to ridicule."],
+ ["Defense","Frame it as child-protection law rather than authoritarianism. The stated purpose is preventing parents from burdening a child with a name they cannot escape."]]},
+
+{code:"P6", type:"real", headline:"An Alaskan town elected a cat as its honorary mayor, a position he held for twenty years.", clues:[
+ ["Precedent","Small unincorporated towns with no actual mayoral office frequently create ceremonial titles as tourism draws."],
+ ["Context","Stubbs held the honorary post in Talkeetna, Alaska, from 1997 until his death in 2017. The town has no formal mayor, which is exactly why the title was available."],
+ ["Defense","Emphasise the loophole — no governmental power was ever transferred to a cat. That distinction is what makes the story survive fact-checking."]]},
+
+{code:"F7", type:"real", headline:"A brown bear was formally enlisted in the Polish army during the Second World War, given a rank, and carried artillery ammunition in combat.", clues:[
+ ["Precedent","Military units have kept mascots for centuries. The unusual step here was formal enlistment, taken to solve a paperwork problem."],
+ ["Context","Wojtek was enlisted so he could travel on a troopship that barred animals. He was given a name, rank and serial number, and served at Monte Cassino in 1944."],
+ ["Defense","The bureaucratic motive is the proof. Nobody fabricating a story invents “we made him a private so he'd count as cargo” — that is how real institutions behave."]]},
+
+{code:"L9", type:"real", headline:"A penguin living in a Scottish zoo has been knighted and promoted to brigadier in the Norwegian King's Guard.", clues:[
+ ["Precedent","Ceremonial military patronage of animals is a live tradition in several European armies, complete with formal promotion parades."],
+ ["Context","Sir Nils Olav is the regimental mascot of the Norwegian King's Guard, based at Edinburgh Zoo. He was knighted in 2008 with the approval of the King of Norway."],
+ ["Defense","Point to the parade footage and the royal approval. This is a documented state ceremony, not a zoo publicity stunt."]]},
+
+{code:"V1", type:"real", headline:"A government poll to name a polar research vessel was won by “Boaty McBoatface”, and officials overruled the public result.", clues:[
+ ["Precedent","Open internet naming polls have been hijacked repeatedly. Agencies now write override clauses into the rules in advance."],
+ ["Context","The 2016 UK poll drew over 120,000 votes for the joke name. The ship was named after a broadcaster instead, and the winning name went to one of its submarines."],
+ ["Defense","The compromise is the credible part. A fabricated story would end at the humiliation — real institutions negotiate their way out."]]},
+
+{code:"G8", type:"real", headline:"The United States government stores over a billion pounds of surplus cheese in limestone caves in Missouri.", clues:[
+ ["Precedent","Agricultural price-support programmes have generated enormous state-held commodity surpluses for decades. The storage has to go somewhere."],
+ ["Context","The caves are naturally cool former mines used as commercial cold storage. The stockpile grew out of dairy subsidies that bought excess production to hold prices stable."],
+ ["Defense","Argue the economics: it is cheaper to warehouse surplus milk as cheese than to let dairy prices collapse. The cave is the least expensive refrigerator available."]]},
+
+{code:"S2", type:"real", headline:"The Netherlands closed prisons for lack of inmates and rented cells to Norway and Belgium to keep them staffed.", clues:[
+ ["Precedent","Prison capacity is a fixed cost. Closing a facility means losing trained staff who cannot be recalled when demand returns."],
+ ["Context","Falling crime rates and sentencing policies favouring alternatives left Dutch facilities under-occupied. Several were leased to neighbouring states."],
+ ["Defense","Frame it as workforce protection, not a stunt. The alternative was making prison officers redundant in regions with no other employer."]]},
+
+{code:"K3", type:"real", headline:"Sweden imports hundreds of thousands of tonnes of garbage from other countries because it does not produce enough of its own to fuel its power plants.", clues:[
+ ["Precedent","Waste-to-energy incineration is standard district-heating infrastructure across Scandinavia, and those plants require a continuous fuel supply."],
+ ["Context","Aggressive domestic recycling reduced Sweden's burnable waste below plant capacity. Neighbouring countries pay Sweden to take waste they would otherwise landfill."],
+ ["Defense","Sweden is paid twice — once to accept the waste, once for the heat it generates. The apparent absurdity is a functioning business model."]]},
+
+{code:"M9", type:"real", headline:"A university experiment started in 1927 has produced nine drops of liquid in a century, and nobody witnessed one fall until a webcam caught it.", clues:[
+ ["Precedent","Long-duration materials experiments exist specifically to measure properties too slow to observe within a human career."],
+ ["Context","The pitch drop experiment at an Australian university shows that pitch, which shatters like a solid when struck, is a fluid of extraordinary viscosity."],
+ ["Defense","The detail that sells it is the failure — decades of missed drops, including one lost to a coffee break. Fabrications do not include that kind of anticlimax."]]},
+
+{code:"B4", type:"real", headline:"A species of jellyfish can reverse its own ageing, reverting to its juvenile stage and starting its life cycle over, apparently without limit.", clues:[
+ ["Precedent","Cellular reprogramming is an established biological mechanism. Several species regenerate whole body structures from differentiated tissue."],
+ ["Context","Turritopsis dohrnii transforms adult cells back to an earlier type and settles into a polyp colony under stress. It remains vulnerable to predation and disease."],
+ ["Defense","Draw the distinction between immortal and invulnerable. The precision of the claim is evidence it came from a paper rather than a rumour."]]},
+
+{code:"T1", type:"real", headline:"Finland hosts an annual Wife Carrying World Championship where the winner receives their partner's weight in beer.", clues:[
+ ["Precedent","Regional Nordic sporting championships built around deliberately absurd disciplines are a well-established summer tourism format."],
+ ["Context","The event runs in Sonkajärvi with formal international rules: a minimum carried weight, a standard obstacle course, and a time penalty for dropping your partner."],
+ ["Defense","Lead with the rulebook. A joke does not need a minimum weight requirement and a drop penalty — a sanctioned competition does."]]},
+
+/* ---------- FABRICATED (10) ---------- */
+{code:"K7", type:"fake", headline:"Global coffee shortage imminent as Brazil implements a 50% export ban to prioritise domestic reserves amid climate anomalies.", clues:[
+ ["Precedent","Major agricultural exporters do have a history of invoking emergency protectionist measures during severe climate shocks."],
+ ["Context","The announcement allegedly surfaced just as commodity markets closed for the weekend, triggering panic-buying among European roasters."],
+ ["Defense","Lean into real anxieties about frost in South America and shifting weather patterns to make sudden government intervention sound inevitable."]]},
+
+{code:"Q2", type:"fake", headline:"Major social media platforms announce a mandatory monthly subscription fee for users who wish to keep their data hidden from corporate AI training models.", clues:[
+ ["Precedent","Tech firms face heavy regulatory pressure over content scraping, and analysts speculate constantly about future monetisation tiers."],
+ ["Context","The change was supposedly leaked via an internal memo describing a tiered model for accounts seeking full opt-out protection."],
+ ["Defense","Frame it as the logical endpoint of platform economics — if they can monetise your data, they can charge you to stop."]]},
+
+{code:"R6", type:"fake", headline:"World Health Organization issues a global warning advising citizens to avoid plastic water bottles left in direct sunlight due to a newly discovered neurotoxin.", clues:[
+ ["Precedent","Health agencies do issue warnings about microplastics and chemical leaching under thermal stress."],
+ ["Context","The alert was allegedly distributed via an emergency bulletin about bottled water left in hot vehicles."],
+ ["Defense","Use terminology about polymer breakdown and chemical toxicity to suggest a suppressed safety warning finally surfacing."]]},
+
+{code:"N1", type:"fake", headline:"The European Union passes legislation requiring all smartphone manufacturers to include a built-in breathalyser that disables messaging apps after midnight.", clues:[
+ ["Precedent","The EU genuinely does pass aggressive standardised hardware mandates on manufacturers selling into the bloc, such as the USB-C charging requirement."],
+ ["Context","The regulation was reportedly driven by transport safety committees seeking to curb late-night incidents."],
+ ["Defense","Argue that EU regulators prioritise public safety over convenience and that hardware-level safety integration is becoming normal."]]},
+
+{code:"N6", type:"fake", headline:"NASA confirms a newly discovered asteroid is composed entirely of solid platinum and will pass close enough to Earth to be mined with standard commercial rockets by 2030.", clues:[
+ ["Precedent","Agencies have genuinely mapped near-Earth metallic asteroids valued in the trillions."],
+ ["Context","The timeline was supposedly fast-tracked after a rocket startup secured a multi-billion-dollar defence subsidy."],
+ ["Defense","Hype the commercial stakes and the billionaire space race; insist the interception technology already exists."]]},
+
+{code:"W2", type:"fake", headline:"The Netherlands will convert every motorway lane to load-bearing solar panels by 2032, funding the rollout entirely from the electricity generated.", clues:[
+ ["Precedent","The country genuinely piloted a solar cycle path, and its infrastructure agency has a real reputation for experimental road technology."],
+ ["Context","The programme was reportedly approved after a pilot stretch outperformed rooftop installations in winter output."],
+ ["Defense","Emphasise the self-funding mechanism — once a road pays for itself, no politician needs to justify the budget."]]},
+
+{code:"J8", type:"fake", headline:"Airlines will begin charging passengers by combined body and baggage weight from 2027 under new international fuel-efficiency rules.", clues:[
+ ["Precedent","Fuel burn genuinely scales with total aircraft weight, and airlines already price checked baggage by the kilogram."],
+ ["Context","The scheme was reportedly agreed at an industry association summit as part of emissions-reduction commitments."],
+ ["Defense","Argue the physics is undeniable and that extending existing baggage pricing to total load is merely consistent."]]},
+
+{code:"C5", type:"fake", headline:"Japan becomes the first country to make a four-day working week legally mandatory for all employers, with criminal penalties for violations.", clues:[
+ ["Precedent","The Japanese government genuinely has published guidance encouraging shorter working weeks, and the country has real, well-documented overwork legislation."],
+ ["Context","The law was reportedly accelerated by demographic pressure and a series of high-profile overwork cases."],
+ ["Defense","Point to Japan's existing overtime caps as proof that this government legislates working hours aggressively."]]},
+
+{code:"F3", type:"fake", headline:"UNESCO adds internet memes to its Intangible Cultural Heritage list, recognising them as a protected form of global folk expression.", clues:[
+ ["Precedent","The Intangible Cultural Heritage list genuinely covers oral traditions, social practices and folk expression rather than physical monuments."],
+ ["Context","The listing was reportedly proposed by a bloc of member states seeking recognition for digital-native culture."],
+ ["Defense","Argue memes are demonstrably folk expression transmitted culturally — a textbook fit for the category as it is actually defined."]]},
+
+{code:"H7", type:"fake", headline:"Several countries move to impose a nightly screen curfew for under-16s after a study linked blue light to permanent retinal cell damage.", clues:[
+ ["Precedent","Multiple governments have genuinely legislated minimum ages and time limits for minors' social media access."],
+ ["Context","The curfew was reportedly triggered by an ophthalmology study circulated ahead of peer review."],
+ ["Defense","Combine real parental anxiety about screen time with clinical-sounding language about photoreceptor degradation."]]}
+];
+
+const AUDIENCE_CODES = ["Y4","E8","U3","A6","O9","I5"];
+const FOOTER = "Unveil · MIL Training Deck";
+
+/* ----------------------------------------------------------------
+   RENDERING
+   Every press piece is produced by the same function regardless of
+   type. `type` is read exactly once, to print the role word in the
+   clue-card footer. It touches no layout, no class, no style.
+   ---------------------------------------------------------------- */
+
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+/* The headline slip is the only PUBLIC component — it sits face-up on
+   the table all play. It therefore carries no pairing code: a code
+   visible to the table is a token a repeat player can memorise across
+   sessions. Re-pairing at cleanup is done by matching the slip's
+   headline against the facilitator answer key instead. */
+const slipHTML = d =>
+  `<div class="piece slip">
+     <div class="headline">${esc(d.headline)}</div>
+     <div class="foot">${FOOTER}</div>
+   </div>`;
+
+const blankSlipHTML = () =>
+  `<div class="piece slip slip-blank">
+     <div class="headline">No story to publish</div>
+     <div class="foot">${FOOTER}</div>
+   </div>`;
+
+const cardHTML = d =>
+  `<div class="piece card">
+     <div class="ref">${esc(d.headline)}</div>
+     <div class="clues">
+       ${d.clues.map(([label, text]) =>
+         `<div class="clue"><b>${label}</b>${esc(text)}</div>`).join("")}
+     </div>
+     <div class="foot"><span>${d.type === "real" ? "Real Press" : "Rogue Press"}</span><span>${d.code}</span></div>
+   </div>`;
+
+const audienceHTML = code =>
+  `<div class="piece card">
+     <div class="aud-role">Audience</div>
+     <div class="aud-body">
+       <ul>
+         <li>You do not pitch, and you hold no clues.</li>
+         <li>You vote on every story: <b>PUBLISH</b> or <b>REJECT</b>.</li>
+         <li>One vote per pitch. Vote on the three-count with everyone else.</li>
+         <li>You score <b>+50</b> for the play simply for serving.</li>
+       </ul>
+       <p style="margin-top:3mm"><i>Trust facts, not emotions. A story sounding absurd is not evidence that it is false.</i></p>
+     </div>
+     <div class="foot"><span>Audience</span><span>${code}</span></div>
+   </div>`;
+
+function sheets(items, perPage, cls) {
+  let html = "";
+  for (let i = 0; i < items.length; i += perPage) {
+    html += `<div class="sheet ${cls}">${items.slice(i, i + perPage).join("")}</div>`;
+  }
+  return html;
+}
+
+/* --- shuffle so Real and Rogue cards are interleaved on the printed
+       sheets. A block of ten identical-looking cards at the end of the
+       run is a cutting-order tell if anyone helps you assemble it. --- */
+const ORDER = [0,20,5,21,11,1,22,16,2,23,8,17,24,3,13,25,9,18,26,4,
+               14,27,10,19,28,6,15,29,7,12];
+const ordered = ORDER.map(i => DATA[i]);
+
+document.getElementById("out").innerHTML =
+    sheets(ordered.map(slipHTML).concat(AUDIENCE_CODES.map(blankSlipHTML)), 12, "sheet-slips")
+  + sheets(ordered.map(cardHTML).concat(AUDIENCE_CODES.map(audienceHTML)), 4, "sheet-cards")
+  + keySheet();
+
+function keySheet() {
+  const rows = DATA.slice()
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .map(d => `<tr>
+        <td class="code">${d.code}</td>
+        <td class="verdict">${d.type === "real" ? "REAL" : "FAKE"}</td>
+        <td>${esc(d.headline.slice(0, 95))}…</td>
+      </tr>`).join("");
+  return `<div class="keysheet">
+    <h2>Facilitator answer key</h2>
+    <div class="warn">FACILITATOR ONLY — do not leave this page on the table.
+      Audience pairing codes are ${AUDIENCE_CODES.join(", ")}.</div>
+    <table>
+      <tr><th>Code</th><th>Verdict</th><th>Headline</th></tr>
+      ${rows}
+    </table>
+  </div>`;
+}
+</script>
+</body>
+</html>

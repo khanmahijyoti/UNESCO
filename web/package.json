@@ -1,0 +1,17 @@
+{
+  "name": "unveil-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static QR companion for the Unveil media-literacy card game. Serves each card's headline and private clues to whoever scanned it. No server, no accounts, no realtime.",
+  "scripts": {
+    "build": "node build.js",
+    "demo": "node build-demo.js",
+    "test": "node test.js",
+    "serve": "node build.js && node serve.js"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode-svg": "^1.1.0",
+    "selfsigned": "^5.5.0"
+  }
+}

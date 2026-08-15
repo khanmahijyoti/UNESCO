@@ -1,0 +1,45 @@
+# Netlify configuration for the Unveil companion.
+#
+# If your git repo root is the folder ABOVE this one, move this file to the
+# repo root and change `base` to "web" and `publish` to "web/dist".
+
+[build]
+  # Only dist/ is ever served. This is the setting that matters: publishing
+  # the repo root instead would expose facilitator/ (the answer key) and
+  # cards.json (every headline in plaintext).
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# QR codes are generated into facilitator/, which Netlify never publishes —
+# so generate them LOCALLY, not here:
+#
+#   BASE_URL=https://your-site.netlify.app/ npm run build
+#
+# The deployed bundle does not depend on BASE_URL at all. dist/index.html is
+# byte-identical whatever it is set to, because BASE_URL only affects the QR
+# codes, the print manifest and the answer key. You can therefore deploy
+# first, claim your URL, and regenerate the codes afterwards without needing
+# to redeploy.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+
+# The deck is inlined into index.html, so the page must not be cached
+# aggressively — a content fix should reach players on their next online load.
+# The service worker handles the offline case.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
