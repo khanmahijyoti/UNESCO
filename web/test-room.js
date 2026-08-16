@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require("./env");
 /* End-to-end test of the room system through PostgREST with the publishable
    key — the same path the browser takes, including anonymous sign-in.
    The earlier in-database test proved the policies; this proves the API

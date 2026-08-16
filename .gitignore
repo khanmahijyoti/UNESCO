@@ -21,6 +21,15 @@ web/node_modules/
 web/.cert/
 node_modules/
 
+# Local configuration. `.env.example` IS committed and carries working
+# public values; `.env` is where a contributor's own keys end up, so it
+# never goes near the repo.
+.env
+web/.env
+*.env
+!.env.example
+!web/.env.example
+
 # ---- editor / OS noise ----
 .DS_Store
 Thumbs.db

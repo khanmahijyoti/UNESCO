@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require("./env");
 /* Verifies the built bundle by running the browser's own decryption path.
    Node 22 exposes the same WebCrypto API the app uses, so this exercises
    the real code path rather than a Node-side reimplementation of it. */

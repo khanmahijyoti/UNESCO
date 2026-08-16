@@ -1,0 +1,117 @@
+# Unveil
+
+A card-based deduction game for media and information literacy. Players pitch news stories — some verified, some fabricated — and the table votes on what to publish. The verified stories are chosen to sound absurd, and the fabricated ones to sound reasonable, so "that can't be true" is a losing strategy.
+
+> **This repository must stay private.** `web/cards.json` and `supabase/seed-cards.sql` pair every headline with its real/fake verdict. They are build inputs, so they cannot be removed — they are also the answer key.
+
+---
+
+## Get running in five minutes
+
+Requires **Node 20.12+** (22 recommended). Nothing else.
+
+```bash
+git clone https://github.com/khanmahi727/UNESCO.git
+cd UNESCO/web
+npm install
+cp .env.example .env        # Windows: copy .env.example .env
+npm run build
+npm test
+```
+
+`npm test` should end with `ALL CHECKS PASSED`. If it does, your checkout is sound.
+
+`.env.example` ships with working values, so a new collaborator can build and test immediately without being handed anything. Every value in it is public by design.
+
+Then look at it:
+
+```bash
+npm run serve               # http://localhost:8070
+```
+
+---
+
+## What is in here
+
+| Path | What it is | Who owns it |
+| --- | --- | --- |
+| `Unveil.md` | Game design: rules, scoring, both story databases | design |
+| `Unveil_MVP.md` | Paper-first MVP plan and playtest protocol | design |
+| `print/` | Printable deck and play kit for the physical game | physical deck team |
+| `web/` | Everything that runs in a browser | this repo |
+| `supabase/` | Database schema and card seed for the room system | this repo |
+
+`web/` builds **two independent products**:
+
+| Output | What it does | Needs |
+| --- | --- | --- |
+| `dist/index.html` | **QR companion.** Scan a printed card, get its headline and private clues. Static, works offline, no server. | nothing |
+| `dist/room.html` | **Room system.** Host opens a game, shares a link, players join on their own devices, host deals. | Supabase |
+
+Leave `SUPABASE_URL` and `SUPABASE_KEY` blank and the companion still builds — `room.html` is simply not emitted.
+
+---
+
+## Commands
+
+Run all of these from `web/`.
+
+| Command | What it does |
+| --- | --- |
+| `npm run build` | Builds `dist/`, plus QR codes and the answer key into `facilitator/` |
+| `npm test` | Verifies the built bundle: decryption, leak checks, QR decoding |
+| `npm run test:room` | Verifies the room system end to end against Supabase |
+| `npm run serve` | Builds, then serves on localhost + HTTPS on your LAN for phone testing |
+| `npm run demo` | Builds the facilitator dealer tool into `demo/` |
+| `npm run seed` | Regenerates `supabase/seed-cards.sql` from `cards.json` |
+
+---
+
+## Testing the multiplayer lobby
+
+`npm run test:room` drives the real client path — anonymous sign-in, room creation, four players joining, dealing — and asserts 27 properties including the ones that matter most: a player can read exactly one deal row (their own), and nobody can read the card table or the burned card.
+
+To try it by hand, `npm run serve` and open `http://localhost:8070/room.html`. Create a game, then open the invite link in **incognito windows or other browsers** — each one gets its own anonymous identity, so one machine can simulate a full table.
+
+You need four players before the host's start button unlocks.
+
+### Using your own Supabase project
+
+The shared project in `.env.example` is fine for development. For your own:
+
+1. Run `supabase/schema.sql` in the SQL editor — tables, RLS, RPCs.
+2. Run `supabase/seed-cards.sql` — the 36 cards.
+3. **Enable anonymous sign-in**: Authentication → Sign In / Providers → *Allow anonymous sign-ins*, then Save. Every RLS policy keys off `auth.uid()`; nothing works until this is on.
+4. Put your project URL and **publishable** key in `.env`.
+
+Never put a `service_role` or `sb_secret_` key in `.env`. The build refuses to emit a bundle containing one.
+
+---
+
+## Things that will trip you up
+
+**Card content lives in one place.** `web/cards.json` is the single source of truth. Edit it, then `npm run build` and `npm run seed`. Never hand-edit `supabase/seed-cards.sql`.
+
+**Slugs are permanent.** A slug is baked into a printed QR code the moment the physical deck goes to press. Edit headline and clue text freely; never change a slug or reuse a retired one.
+
+**Only fabricated stories carry player-facing clues.** A Real Journalist gets the headline and must defend it unaided. The verified stories' supporting notes live in `verification`, which is facilitator-only and never sent to a player. This is enforced in the build, in a database check constraint, and in both test suites.
+
+**Three directories must never be committed or deployed.** `web/facilitator/` (answer key, QR codes), `demo/` (dealer tool, embeds every card's type), and `web/dist/` (build output). All are gitignored at the repo root; the root `.gitignore` is the one that survives cloning.
+
+**Do not commit `dist/`.** It is regenerated by `npm run build`.
+
+**WebCrypto needs a secure context.** Opening `dist/index.html` straight off disk shows an explanatory error rather than a card. Use `npm run serve`, which is why it exists.
+
+**On Windows, edit files in an editor set to UTF-8.** The content is full of em-dashes and curly quotes. PowerShell 5.1's `Get-Content`/`Set-Content` default to ANSI and will silently mangle them.
+
+---
+
+## How the secrets stay secret
+
+Worth understanding before changing anything in `web/build.js` or `supabase/schema.sql`.
+
+**QR companion.** The whole deck ships to every phone, so each card is encrypted under a key derived from its own slug. Scanning one card decrypts that card and nothing else. Payloads are padded to a uniform byte length — AES-GCM preserves plaintext length, so without padding the blobs would sort into short (real) and long (fake) and give up the answer key without any decryption at all.
+
+**Room system.** Roles are assigned inside a `SECURITY DEFINER` function; the client never deals. Row-level security means a player who queries every table they can reach sees exactly one deal row. The `cards` and `round_secrets` tables have no select policy at all — card text arrives only through `get_my_card()`, and the burned card is unreadable by everyone, the host included.
+
+Both properties are asserted in the test suites. If you change how dealing or encryption works, those tests are the specification.

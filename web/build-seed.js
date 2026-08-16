@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require("./env");
 /* Turns cards.json into ../supabase/seed-cards.sql.
 
    Content is dollar-quoted rather than escaped, because the headlines are

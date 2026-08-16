@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require("./env");
 /* ============================================================
    Builds the facilitator dealer demo into ../demo/.
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require("./env");
 /* Local preview server for dist/. Raises two listeners:
 
      http  on localhost      — for testing in a desktop browser
