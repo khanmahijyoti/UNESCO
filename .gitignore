@@ -39,3 +39,9 @@ Thumbs.db
 # If it must go public: remove those two files from history, keep them
 # out of the repo, and build/deploy from a local copy instead.
 # ============================================================
+
+# ---- AI Agent and IDE files ----
+.agents/
+.claude/
+.mcp.json
+skills-lock.json
