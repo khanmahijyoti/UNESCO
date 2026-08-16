@@ -51,15 +51,35 @@ async function decrypt(slug, payload) {
 
     if (got.type !== c.type) roleOk = false;
     if (c.type === "audience") {
-      if (got.headline || got.clues) audOk = false;
+      if (got.headline || (got.clues && got.clues.length)) audOk = false;
     } else {
       if (got.headline !== c.headline) { okAll = false; console.log(`     ${c.slug}: headline mismatch`); }
-      if (JSON.stringify(got.clues) !== JSON.stringify(c.clues)) { okAll = false; console.log(`     ${c.slug}: clue mismatch`); }
+      const want = c.clues || [];
+      if (JSON.stringify(got.clues) !== JSON.stringify(want)) { okAll = false; console.log(`     ${c.slug}: clue mismatch`); }
     }
   }
   chk(okAll, "all 36 cards decrypt with their own slug and match cards.json");
   chk(roleOk, "every decrypted card reports the correct type");
   chk(audOk, "audience cards carry no headline and no clues");
+
+  /* clue asymmetry: only fabrications carry player-facing clues */
+  let realWithClues = 0, fakeWithout = 0;
+  for (const c of src.cards.filter(c => c.type !== "audience")) {
+    const got = await decrypt(c.slug, DECK.cards[await cardId(c.slug)]);
+    if (c.type === "real" && got.clues && got.clues.length) realWithClues++;
+    if (c.type === "fake" && (!got.clues || got.clues.length !== 3)) fakeWithout++;
+  }
+  chk(realWithClues === 0, `no real card ships clues to the player (${realWithClues} did)`);
+  chk(fakeWithout === 0, `every fake card ships exactly 3 clues (${fakeWithout} did not)`);
+  chk(src.cards.filter(c => c.type === "real").every(c => c.verification),
+      "real cards keep their verification notes for the facilitator");
+
+  /* Ciphertext length must not classify the deck. AES-GCM preserves plaintext
+     length, so unpadded payloads would sort into short (real) and long (fake)
+     without any decryption at all. */
+  const blobSizes = new Set(Object.values(DECK.cards).map(b => b.length));
+  chk(blobSizes.size === 1,
+      `all 36 blobs are the same size, so length leaks nothing (${blobSizes.size} distinct)`);
 
   /* a slug must not open any other card */
   const a = src.cards[0], b = src.cards[1];
@@ -75,6 +95,8 @@ async function decrypt(slug, payload) {
   chk(leaks.length === 0, `no plaintext headline in the bundle (${leaks.length} leaked)`);
   const whys = src.cards.filter(c => c.whyItWorks && bundle.includes(c.whyItWorks.slice(0, 40)));
   chk(whys.length === 0, `no facilitator debrief content in the bundle (${whys.length} leaked)`);
+  const vers = src.cards.filter(c => c.verification && bundle.includes(c.verification[0][1].slice(0, 40)));
+  chk(vers.length === 0, `no verification notes in the bundle (${vers.length} leaked)`);
   chk(!/"(real|fake)"/.test(bundle.slice(bundle.indexOf("const DECK"), bundle.indexOf("const $ ="))),
       "deck payload contains no real/fake signal");
 

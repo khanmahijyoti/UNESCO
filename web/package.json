@@ -6,10 +6,13 @@
   "scripts": {
     "build": "node build.js",
     "demo": "node build-demo.js",
+    "seed": "node build-seed.js",
     "test": "node test.js",
+    "test:room": "node test-room.js",
     "serve": "node build.js && node serve.js"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "jsqr": "^1.4.0",
     "qrcode-svg": "^1.1.0",
     "selfsigned": "^5.5.0"

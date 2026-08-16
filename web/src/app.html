@@ -208,12 +208,16 @@ function viewAudience() {
 }
 
 function viewPress(card) {
+  // Only fabrications carry clues. A Real Journalist gets the headline and
+  // defends it unaided — so the reveal button is labelled for what is
+  // actually behind it, and never implies clues that do not exist.
+  const hasClues = Array.isArray(card.clues) && card.clues.length > 0;
   app.innerHTML = `
     <div class="brand">Unveil</div>
     <div class="headline">${esc(card.headline)}</div>
-    <div class="hint">This is your story. The clues below are yours alone — never show this screen to another player.</div>
+    <div class="hint">This is your story. What is below is yours alone — never show this screen to another player.</div>
     <button class="primary" id="btn-present">Show the headline to the table</button>
-    <button id="btn-reveal">Reveal my clues</button>
+    <button id="btn-reveal">${hasClues ? "Reveal my clues" : "Reveal my role"}</button>
     <div id="clues" hidden></div>
     ${FOOT}`;
 
@@ -227,13 +231,22 @@ function viewPress(card) {
     const panel = $("clues");
     panel.innerHTML = `
       <div class="role">${card.type === "real" ? "Real Press" : "Rogue Press"}</div>
-      ${card.clues.map(([label, text]) => `
-        <div class="clue"><h3>${esc(label)}</h3><p>${esc(text)}</p></div>`).join("")}
-      <div class="privnote">
-        Clues are ammunition, not a script — quote them, paraphrase them, or invent around them.
-        This panel hides itself whenever you leave the page.
-      </div>
-      <button id="btn-hide">Hide clues</button>`;
+      ${hasClues
+        ? card.clues.map(([label, text]) => `
+            <div class="clue"><h3>${esc(label)}</h3><p>${esc(text)}</p></div>`).join("") +
+          `<div class="privnote">
+             Clues are ammunition, not a script — quote them, paraphrase them, or invent around them.
+             This panel hides itself whenever you leave the page.
+           </div>`
+        : `<p style="font-size:1rem;margin-bottom:1rem">Your story is <b>true</b>, and you have no
+             prepared arguments. Defend it however you can — from what you know, from what is
+             plausible, from how the world actually works.</p>
+           <div class="privnote">
+             It will sound absurd. That is the point: verified stories are often the strange ones,
+             and a polished case is not what makes something true.
+             This panel hides itself whenever you leave the page.
+           </div>`}
+      <button id="btn-hide">Hide</button>`;
     panel.hidden = false;
     $("btn-hide").onclick = hideClues;
   };
@@ -246,7 +259,7 @@ function hideClues() {
   panel.innerHTML = "";
   const btn = document.createElement("button");
   btn.id = "btn-reveal";
-  btn.textContent = "Reveal my clues";
+  btn.textContent = "Reveal";
   panel.before(btn);
   btn.onclick = () => location.reload();
 }

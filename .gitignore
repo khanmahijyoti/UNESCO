@@ -1,0 +1,41 @@
+# ============================================================
+# Repo-root guard.
+#
+# web/.gitignore and demo/.gitignore cover most of this already, but
+# demo/.gitignore ignores itself (it is just `*`), so a fresh clone loses
+# that protection and a rebuilt demo/ becomes committable. These rules
+# survive cloning.
+# ============================================================
+
+# ---- NEVER COMMIT: these are the answer key in usable form ----
+# demo/index.html embeds every slug with its real/fake type.
+# web/facilitator/ holds the answer key, print manifest and QR codes.
+demo/
+web/facilitator/
+
+# ---- build output; regenerate with `npm run build` ----
+web/dist/
+
+# ---- local only ----
+web/node_modules/
+web/.cert/
+node_modules/
+
+# ---- editor / OS noise ----
+.DS_Store
+Thumbs.db
+*.log
+
+# ============================================================
+# DELIBERATELY TRACKED, AND WHY THE REPO MUST STAY PRIVATE
+#
+#   web/cards.json           every headline with its real/fake verdict
+#   supabase/seed-cards.sql  the same content, generated
+#
+# Both are build inputs, so they have to be in the repo — and both are
+# the game's answer key in plain text. If this repository is ever made
+# public, the game is over for anyone who reads it.
+#
+# If it must go public: remove those two files from history, keep them
+# out of the repo, and build/deploy from a local copy instead.
+# ============================================================

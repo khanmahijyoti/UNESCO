@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#141414">
+<title>Unveil</title>
+<style>
+:root {
+  --bg:#f7f6f3; --surface:#fff; --ink:#16150f; --muted:#6b6a63;
+  --line:#dedcd4; --accent:#16150f; --shade:#efeee8; --bad:#a3392c; --ok:#3f6f4a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#131310; --surface:#1c1c18; --ink:#f0efe8; --muted:#98968c;
+    --line:#302f29; --accent:#f0efe8; --shade:#232320; --bad:#d98b7e; --ok:#8fc19b;
+  }
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body {
+  background:var(--bg); color:var(--ink); min-height:100vh;
+  font-family:Georgia,"Times New Roman",serif; line-height:1.5;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.wrap { max-width:34rem; margin:0 auto; padding:1.75rem 1.25rem 4rem; }
+.brand {
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:.68rem; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:1.5rem;
+}
+h2 { font-size:1.4rem; font-weight:400; margin-bottom:.6rem; letter-spacing:-.01em; }
+p.lede { color:var(--muted); font-size:.92rem; margin-bottom:1.5rem; }
+
+label { display:block; font-family:system-ui,sans-serif; font-size:.78rem;
+        color:var(--muted); margin-bottom:.4rem; }
+input {
+  font:inherit; width:100%; padding:.85rem 1rem; margin-bottom:1rem;
+  background:var(--surface); color:var(--ink);
+  border:1px solid var(--line); border-radius:.55rem;
+}
+input:focus { outline:2px solid var(--muted); outline-offset:-1px; }
+input.code { font-family:ui-monospace,"Courier New",monospace; font-size:1.5rem;
+             letter-spacing:.4em; text-transform:uppercase; text-align:center; }
+
+button {
+  font:inherit; font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:.95rem; cursor:pointer; width:100%; padding:.9rem 1.2rem; margin-bottom:.7rem;
+  background:var(--surface); color:var(--ink);
+  border:1px solid var(--line); border-radius:.55rem; transition:opacity .12s;
+}
+button:active { opacity:.6; }
+button.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+button:disabled { opacity:.4; cursor:not-allowed; }
+button.link { background:none; border:none; color:var(--muted); text-decoration:underline;
+              font-size:.85rem; padding:.4rem; }
+
+.codebox { text-align:center; padding:1.5rem 1rem; background:var(--shade);
+           border-radius:.7rem; margin-bottom:1.25rem; }
+.codebox .k { font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.18em;
+              text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
+.codebox .v { font-family:ui-monospace,"Courier New",monospace; font-size:2.4rem;
+              letter-spacing:.28em; font-weight:700; text-indent:.28em; }
+
+ul.roster { list-style:none; margin-bottom:1.25rem; }
+ul.roster li { display:flex; align-items:center; gap:.7rem; padding:.75rem .2rem;
+               border-bottom:1px solid var(--line); font-size:1rem; }
+ul.roster li:last-child { border-bottom:none; }
+.dot { width:.5rem; height:.5rem; border-radius:50%; background:var(--ok); flex:none; }
+.tag { font-family:system-ui,sans-serif; font-size:.62rem; letter-spacing:.12em;
+       text-transform:uppercase; color:var(--muted); margin-left:auto; }
+.you { font-weight:700; }
+
+.note { background:var(--shade); border-left:2px solid var(--muted); padding:.8rem 1rem;
+        border-radius:0 .4rem .4rem 0; font-size:.84rem; color:var(--muted);
+        margin-bottom:1.25rem; font-family:system-ui,sans-serif; }
+.err { border-left-color:var(--bad); color:var(--bad); }
+
+/* ---------- card view ---------- */
+.headline { font-size:1.45rem; line-height:1.32; margin-bottom:1.25rem; }
+.hint { font-family:system-ui,sans-serif; font-size:.8rem; color:var(--muted);
+        margin-bottom:1.5rem; padding-bottom:1.25rem; border-bottom:1px solid var(--line); }
+.role { font-family:system-ui,sans-serif; font-size:.7rem; letter-spacing:.18em;
+        text-transform:uppercase; color:var(--muted); padding-bottom:.6rem;
+        border-bottom:1px solid var(--line); margin-bottom:1.25rem; }
+.clue { margin-bottom:1.35rem; }
+.clue h3 { font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.14em;
+           text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:.3rem; }
+.clue p { font-size:1rem; }
+#clues[hidden] { display:none; }
+.aud li { margin:0 0 .7rem 1.1rem; }
+
+.foot { font-family:system-ui,sans-serif; font-size:.65rem; letter-spacing:.12em;
+        text-transform:uppercase; color:var(--muted); margin-top:2.5rem;
+        padding-top:1.25rem; border-top:1px solid var(--line); }
+.hide { display:none !important; }
+.spin { color:var(--muted); font-size:.9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Unveil</div>
+  <div id="app"><p class="spin">Connecting…</p></div>
+  <div class="foot">Unveil · MIL training material</div>
+</div>
+
+<script src="vendor/supabase.js"></script>
+<script>
+const SUPABASE_URL = "__SUPABASE_URL__";
+const SUPABASE_KEY = "__SUPABASE_KEY__";
+
+const app = document.getElementById("app");
+const $  = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, storageKey: "unveil-auth" }
+});
+
+let me = { userId: null, name: localStorage.getItem("unveil-name") || "" };
+let room = null, players = [], isHost = false, channel = null, poll = null, card = null;
+
+const codeFromHash = () =>
+  (location.hash || "").replace(/^#\/?/, "").trim().toUpperCase().slice(0, 4);
+
+function shareLink(code) {
+  return location.origin + location.pathname + "#" + code;
+}
+
+function fail(e) {
+  const m = (e && (e.message || e.error_description)) || String(e);
+  // Postgres exceptions arrive prefixed; the human part is what we raised.
+  return m.replace(/^.*?:\s*/, "").replace(/^ERROR:\s*/i, "");
+}
+
+/* ================= screens ================= */
+
+function screenHome(err) {
+  app.innerHTML = `
+    <h2>Start or join a game</h2>
+    <p class="lede">Four to ten players. One of you hosts; everyone else joins with a code.</p>
+    ${err ? `<div class="note err">${esc(err)}</div>` : ""}
+    <label for="nm">Your name</label>
+    <input id="nm" maxlength="24" placeholder="e.g. Priya" value="${esc(me.name)}" autocomplete="nickname">
+    <button class="primary" id="create">Create a game</button>
+    <label for="cd" style="margin-top:1.25rem">Or join with a code</label>
+    <input id="cd" class="code" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off">
+    <button id="join">Join game</button>`;
+
+  $("create").onclick = () => act($("create"), async () => {
+    const name = need($("nm").value);
+    const { data, error } = await sb.rpc("create_room", { p_name: name });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    location.hash = row.code;
+    await enterLobby(row.code);
+  });
+
+  $("join").onclick = () => act($("join"), async () => {
+    const name = need($("nm").value);
+    const code = $("cd").value.trim().toUpperCase();
+    if (code.length !== 4) throw new Error("A game code is four characters.");
+    await doJoin(code, name);
+  });
+}
+
+function screenJoin(code, err) {
+  app.innerHTML = `
+    <h2>Join game <span style="font-family:ui-monospace,monospace">${esc(code)}</span></h2>
+    <p class="lede">Pick the name the rest of the table will see.</p>
+    ${err ? `<div class="note err">${esc(err)}</div>` : ""}
+    <label for="nm">Your name</label>
+    <input id="nm" maxlength="24" placeholder="e.g. Priya" value="${esc(me.name)}" autocomplete="nickname">
+    <button class="primary" id="go">Join</button>
+    <button class="link" id="back">Start my own game instead</button>`;
+
+  $("go").onclick = () => act($("go"), () => doJoin(code, need($("nm").value)));
+  $("back").onclick = () => { location.hash = ""; screenHome(); };
+}
+
+function screenLobby() {
+  const enough = players.length >= 4;
+  app.innerHTML = `
+    <div class="codebox">
+      <div class="k">Game code</div>
+      <div class="v">${esc(room.code)}</div>
+    </div>
+    <button id="copy">Copy invite link</button>
+    <p class="lede" style="margin:.25rem 0 1.5rem">
+      Anyone with this link joins straight in. Read the code aloud if that is easier.
+    </p>
+
+    <label>In the room — ${players.length} of 10</label>
+    <ul class="roster">${players.map(p => `
+      <li>
+        <span class="dot"></span>
+        <span class="${p.id === me.playerId ? "you" : ""}">${esc(p.name)}</span>
+        ${p.is_host ? '<span class="tag">Host</span>' : ""}
+      </li>`).join("")}</ul>
+
+    ${isHost ? `
+      <button class="primary" id="start" ${enough ? "" : "disabled"}>
+        ${enough ? `Deal and start · ${players.length} players` : `Waiting for ${4 - players.length} more`}
+      </button>
+      <div class="note">You are the host. Everyone gets a private card the moment you
+      start — including you. One extra card is dealt to nobody and stays hidden, so not
+      even you will know how many rogues are in play.</div>`
+    : `<div class="note">Waiting for the host to start. Keep this page open.</div>
+       <button class="link" id="leave">Leave the room</button>`}`;
+
+  $("copy").onclick = async () => {
+    const link = shareLink(room.code);
+    try {
+      await navigator.clipboard.writeText(link);
+      $("copy").textContent = "Link copied";
+      setTimeout(() => { if ($("copy")) $("copy").textContent = "Copy invite link"; }, 1800);
+    } catch {
+      // Clipboard is blocked outside a secure context; show it to copy by hand.
+      $("copy").insertAdjacentHTML("afterend",
+        `<input readonly value="${esc(link)}" onclick="this.select()">`);
+      $("copy").remove();
+    }
+  };
+
+  if (isHost) {
+    $("start").onclick = () => act($("start"), async () => {
+      const { error } = await sb.rpc("start_round", { p_room: room.id });
+      if (error) throw error;
+      await showCard();
+    });
+  } else {
+    $("leave").onclick = () => act($("leave"), async () => {
+      await sb.rpc("leave_room", { p_room: room.id });
+      teardown(); location.hash = ""; screenHome();
+    });
+  }
+}
+
+function screenCard() {
+  const order = players.slice().filter(p => p.seat).sort((a, b) => a.seat - b.seat);
+  const turns = `
+    <label style="margin-top:2rem">Turn order</label>
+    <ul class="roster">${order.map(p => `
+      <li><span class="${p.id === me.playerId ? "you" : ""}">${p.seat}. ${esc(p.name)}</span>
+      ${p.id === me.playerId ? '<span class="tag">You</span>' : ""}</li>`).join("")}</ul>`;
+
+  if (card.card_type === "audience") {
+    app.innerHTML = `
+      <div class="role">Audience</div>
+      <p class="headline" style="font-size:1.15rem">You are the public eye. You hold no story and no clues.</p>
+      <ul class="aud">
+        <li>Vote on every story: <b>Publish</b> or <b>Reject</b>.</li>
+        <li>You score <b>+50</b> for the round simply for serving, on top of your votes.</li>
+      </ul>
+      <div class="note">A story sounding absurd is not evidence that it is false.</div>
+      ${turns}`;
+    return;
+  }
+
+  // Only fabrications carry clues. A Real Journalist gets the headline and
+  // nothing else, so the button must not promise clues that do not exist.
+  const hasClues = Array.isArray(card.clues) && card.clues.length > 0;
+
+  app.innerHTML = `
+    <div class="headline">${esc(card.headline)}</div>
+    <div class="hint">Your story, seat ${card.seat}. What is below is yours alone —
+      never show this screen to another player.</div>
+    <button id="reveal">${hasClues ? "Reveal my clues" : "Reveal my role"}</button>
+    <div id="clues" hidden></div>
+    ${turns}`;
+
+  $("reveal").onclick = () => {
+    $("reveal").remove();
+    const panel = $("clues");
+    panel.innerHTML = `
+      <div class="role">${card.card_type === "real" ? "Real Press" : "Rogue Press"}</div>
+      ${hasClues
+        ? (card.clues).map(([label, text]) => `
+            <div class="clue"><h3>${esc(label)}</h3><p>${esc(text)}</p></div>`).join("") +
+          `<div class="note">Clues are ammunition, not a script. This panel hides itself
+             whenever you leave the page.</div>`
+        : `<p style="margin-bottom:1rem">Your story is <b>true</b>, and you have no prepared
+             arguments. Defend it however you can — from what you know, from what is plausible,
+             from how the world actually works.</p>
+           <div class="note">It will sound absurd. That is the point: verified stories are often
+             the strange ones, and a polished case is not what makes something true.</div>`}
+      <button id="hideclues">Hide</button>`;
+    panel.hidden = false;
+    $("hideclues").onclick = hideClues;
+  };
+}
+
+function hideClues() {
+  const panel = $("clues");
+  if (!panel || panel.hidden) return;
+  panel.hidden = true;
+  panel.innerHTML = "";
+  if (!$("reveal")) {
+    const b = document.createElement("button");
+    b.id = "reveal"; b.textContent = "Reveal";
+    b.onclick = () => screenCard();
+    panel.before(b);
+  }
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) hideClues(); });
+
+/* ================= plumbing ================= */
+
+function need(v) {
+  const n = (v || "").trim();
+  if (!n) throw new Error("Please enter a name.");
+  me.name = n;
+  localStorage.setItem("unveil-name", n);
+  return n;
+}
+
+/* Runs an action with the button disabled, and surfaces the database's own
+   error text rather than a generic failure. */
+async function act(btn, fn) {
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = "…";
+  try {
+    await fn();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = label;
+    const box = document.createElement("div");
+    box.className = "note err";
+    box.textContent = fail(e);
+    btn.before(box);
+    setTimeout(() => box.remove(), 6000);
+  }
+}
+
+async function doJoin(code, name) {
+  const { data, error } = await sb.rpc("join_room", { p_code: code, p_name: name });
+  if (error) throw error;
+  location.hash = code;
+  await enterLobby(code);
+}
+
+async function refresh() {
+  const { data, error } = await sb.rpc("room_snapshot", { p_code: room.code });
+  if (error || !data) return;
+  room = { ...room, ...data.room };
+  players = data.players || [];
+  isHost = !!data.you_are_host;
+  const mine = players.find(p => p.is_host === isHost && p.name === me.name);
+  me.playerId = (players.find(p => p.seat && p.id === me.playerId) || mine || {}).id || me.playerId;
+
+  if (room.phase === "playing" && !card) { await showCard(); return; }
+  if (room.phase === "lobby") screenLobby();
+}
+
+async function showCard() {
+  const { data: rounds, error: rerr } = await sb
+    .from("rounds").select("id, round_no")
+    .eq("room_id", room.id).order("round_no", { ascending: false }).limit(1);
+  if (rerr || !rounds || !rounds.length) return;
+
+  const { data, error } = await sb.rpc("get_my_card", { p_round: rounds[0].id });
+  if (error) return;
+  card = Array.isArray(data) ? data[0] : data;
+  if (!card) return;
+  await refreshPlayersOnly();
+  screenCard();
+}
+
+async function refreshPlayersOnly() {
+  const { data } = await sb.rpc("room_snapshot", { p_code: room.code });
+  if (data) players = data.players || [];
+}
+
+function subscribe() {
+  teardown();
+  channel = sb.channel("unveil:" + room.id)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "players", filter: "room_id=eq." + room.id }, refresh)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "rooms", filter: "id=eq." + room.id }, refresh)
+    .subscribe();
+  // Realtime drops on flaky mobile connections; this is the safety net.
+  poll = setInterval(refresh, 5000);
+}
+
+function teardown() {
+  if (channel) { sb.removeChannel(channel); channel = null; }
+  if (poll) { clearInterval(poll); poll = null; }
+}
+
+async function enterLobby(code) {
+  room = { code };
+  const { data, error } = await sb.rpc("room_snapshot", { p_code: code });
+  if (error || !data) throw new Error("Could not open that room.");
+  room = { ...room, ...data.room };
+  players = data.players || [];
+  isHost = !!data.you_are_host;
+  const self = players.find(p => p.name === me.name);
+  if (self) me.playerId = self.id;
+  subscribe();
+  if (room.phase === "playing") await showCard(); else screenLobby();
+}
+
+/* ================= boot ================= */
+
+(async function boot() {
+  let { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) {
+      app.innerHTML = `<h2>Cannot sign in</h2>
+        <div class="note err">${esc(fail(error))}</div>
+        <p class="lede">If this says anonymous sign-ins are disabled, switch them on in
+        Supabase under Authentication → Sign In / Providers → Anonymous.</p>`;
+      return;
+    }
+    session = data.session;
+  }
+  me.userId = session.user.id;
+
+  const code = codeFromHash();
+  if (!code) return screenHome();
+
+  // Already a member? Go straight in. Otherwise ask for a name first.
+  const { data } = await sb.rpc("room_snapshot", { p_code: code });
+  if (data) { await enterLobby(code); return; }
+  screenJoin(code);
+})();
+
+window.addEventListener("hashchange", () => location.reload());
+</script>
+</body>
+</html>

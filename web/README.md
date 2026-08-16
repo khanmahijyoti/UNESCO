@@ -22,6 +22,37 @@ npm test           # verifies the built bundle
 
 ---
 
+## Two products in one build
+
+| | What it is | Needs |
+| --- | --- | --- |
+| `dist/index.html` | **QR companion.** Scan a printed card, get its headline and private clues. Static, offline, no server. | nothing |
+| `dist/room.html` | **Room system.** Host opens a game, shares a link, players join on their own devices, host deals. | Supabase |
+
+They are independent. `room.html` is only emitted when `SUPABASE_URL` and `SUPABASE_KEY` are set; the companion builds either way.
+
+```bash
+SUPABASE_URL=https://rtruzqnfhbaamjtsyzwd.supabase.co \
+SUPABASE_KEY=sb_publishable_... \
+BASE_URL=https://your-site.netlify.app/ \
+npm run build
+```
+
+`SUPABASE_KEY` must be the **publishable** key. It is public by design and belongs in the client. The build refuses to emit a bundle containing a `service_role` key.
+
+### Room system setup, in order
+
+1. Apply `../supabase/schema.sql` (tables, RLS, RPCs).
+2. Apply `../supabase/seed-cards.sql` (`npm run seed` regenerates it from `cards.json`).
+3. **Enable anonymous sign-in** — Authentication → Sign In / Providers → Anonymous. Every RLS policy keys off `auth.uid()` and players should not need accounts. Nothing works until this is on.
+4. `npm run test:room` to verify the whole flow end to end.
+
+### How the secrets stay secret
+
+Roles are assigned inside a `SECURITY DEFINER` function; the client never deals. Row-level security means a player who queries every table they can reach sees **exactly one** deal row — their own. The `cards` and `round_secrets` tables have no select policy at all, so card text arrives only through `get_my_card()`, and the burned card is unreadable **by everyone, the host included**.
+
+---
+
 ## Scanning a code right now, before you have a deployment
 
 With no `BASE_URL` set, the build points every QR code at **this machine's LAN address over HTTPS** — so the codes it generates are immediately scannable from a phone.

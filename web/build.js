@@ -81,13 +81,24 @@ for (const c of cards) {
   if (!(c.type in counts)) die(`card ${c.slug} has unknown type ${JSON.stringify(c.type)}.`);
   counts[c.type]++;
 
+  // Clue asymmetry (v2): only fabrications carry player-facing clues.
+  // A Real Journalist gets the headline and must defend it unaided; the
+  // verified story's supporting notes are facilitator-only.
   if (c.type === "audience") {
     if (c.headline || c.clues) die(`audience card ${c.slug} must carry no headline and no clues.`);
   } else {
     if (!c.headline || !c.headline.trim()) die(`card ${c.slug} has no headline.`);
-    if (!Array.isArray(c.clues) || c.clues.length !== 3) die(`card ${c.slug} must have exactly 3 clues.`);
-    for (const cl of c.clues) {
-      if (!Array.isArray(cl) || cl.length !== 2 || !cl[0] || !cl[1]) die(`card ${c.slug} has a malformed clue.`);
+
+    if (c.type === "real") {
+      if (c.clues) die(`real card ${c.slug} must not carry player-facing clues — put them in "verification".`);
+      if (!Array.isArray(c.verification) || c.verification.length !== 3) {
+        die(`real card ${c.slug} needs 3 facilitator verification notes.`);
+      }
+    } else {
+      if (!Array.isArray(c.clues) || c.clues.length !== 3) die(`fake card ${c.slug} must have exactly 3 clues.`);
+      for (const cl of c.clues) {
+        if (!Array.isArray(cl) || cl.length !== 2 || !cl[0] || !cl[1]) die(`card ${c.slug} has a malformed clue.`);
+      }
     }
   }
 }
@@ -102,32 +113,53 @@ for (const [k, v] of Object.entries(EXPECT)) {
 const cardId = slug =>
   crypto.createHash("sha256").update(slug + "|id").digest("hex").slice(0, 16);
 
-function seal(slug, payload) {
+function seal(slug, payload, padTo) {
   const key = crypto.pbkdf2Sync(slug, Buffer.from(SALT, "hex"), ITER, 32, "sha256");
   // Deterministic IV from the slug: content is immutable per slug, so a
   // fixed IV never repeats under a reused key, and the build stays
   // byte-reproducible. Do not copy this pattern to a mutable payload.
   const iv = crypto.createHash("sha256").update(slug + "|iv").digest().subarray(0, 12);
   const c = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const ct = Buffer.concat([c.update(JSON.stringify(payload), "utf8"), c.final(), c.getAuthTag()]);
+  // AES-GCM is a stream cipher: ciphertext length == plaintext length. Since
+  // only fabrications carry clues, an unpadded deck would sort into short
+  // blobs (real, audience) and long ones (fake) — the whole answer key,
+  // readable off the byte counts without decrypting anything. Every payload
+  // is padded to a common size. JSON.parse ignores trailing whitespace, so
+  // the client needs no unpadding step.
+  // Pad by BYTES, not characters. The content is full of em-dashes, curly
+  // quotes and macrons, which are multi-byte in UTF-8 — padEnd() would equalise
+  // character counts while leaving byte counts (and so ciphertext lengths)
+  // different. A space is exactly one byte, so this lands on the nose.
+  const json = JSON.stringify(payload);
+  const plain = json + " ".repeat(padTo - Buffer.byteLength(json, "utf8"));
+  const ct = Buffer.concat([c.update(plain, "utf8"), c.final(), c.getAuthTag()]);
   return Buffer.concat([iv, ct]).toString("base64");
 }
 
 const deck = { v: 1, salt: SALT, iter: ITER, cards: {} };
 
+// Player payload. `verification` and `whyItWorks` are facilitator material and
+// are deliberately absent — either one would identify the card's type.
+const payloadFor = c => c.type === "audience"
+  ? { type: "audience" }
+  : { type: c.type, headline: c.headline, clues: c.clues || [] };
+
+const PAD = Math.max(...cards.map(c => Buffer.byteLength(JSON.stringify(payloadFor(c)), "utf8")));
+
 for (const c of cards) {
-  // Player payload. `whyItWorks` is facilitator debrief material and is
-  // deliberately NOT included — shipping it would mark the card as fake.
-  const payload = c.type === "audience"
-    ? { type: "audience" }
-    : { type: c.type, headline: c.headline, clues: c.clues };
-  deck.cards[cardId(c.slug)] = seal(c.slug, payload);
+  deck.cards[cardId(c.slug)] = seal(c.slug, payloadFor(c), PAD);
+}
+
+{
+  const sizes = new Set(Object.values(deck.cards).map(b => b.length));
+  if (sizes.size !== 1) die(`payload padding failed — ${sizes.size} distinct blob sizes leak card type.`);
 }
 
 if (Object.keys(deck.cards).length !== cards.length) die("card id collision — regenerate a slug.");
 
 const serialised = JSON.stringify(deck);
 if (/whyItWorks/i.test(serialised)) die("facilitator content leaked into the deployable payload.");
+if (/verification/i.test(serialised)) die("verification notes leaked into the deployable payload.");
 for (const c of cards) {
   if (c.headline && serialised.includes(c.headline.slice(0, 40))) {
     die(`plaintext headline for ${c.slug} found in the payload — encryption did not apply.`);
@@ -151,6 +183,33 @@ fs.writeFileSync(
   path.join(DIST, "sw.js"),
   fs.readFileSync(path.join(SRC, "sw.js"), "utf8").replace("__VERSION__", version)
 );
+
+/* ---------------- room system (multiplayer lobby) ----------------
+   Only emitted when the Supabase project is configured. The QR companion
+   above is entirely independent and still builds without it. */
+const SUPA_URL = process.env.SUPABASE_URL || "";
+const SUPA_KEY = process.env.SUPABASE_KEY || "";
+let roomBuilt = false;
+
+if (SUPA_URL && SUPA_KEY) {
+  const vendorSrc = path.join(ROOT, "node_modules", "@supabase", "supabase-js", "dist", "umd", "supabase.js");
+  if (!fs.existsSync(vendorSrc)) die("supabase-js not installed — run `npm install`.");
+
+  fs.mkdirSync(path.join(DIST, "vendor"), { recursive: true });
+  fs.copyFileSync(vendorSrc, path.join(DIST, "vendor", "supabase.js"));
+
+  const roomHtml = fs.readFileSync(path.join(SRC, "room.html"), "utf8")
+    .replace("__SUPABASE_URL__", SUPA_URL)
+    .replace("__SUPABASE_KEY__", SUPA_KEY);
+  if (roomHtml.includes("__SUPABASE_")) die("supabase placeholders not substituted into room.html.");
+
+  // The publishable key is meant to be public; the service_role key never is.
+  // Refuse to ship a build that has one baked in by mistake.
+  if (/service_role/.test(roomHtml)) die("a service_role key reached the client bundle. Use the publishable key.");
+
+  fs.writeFileSync(path.join(DIST, "room.html"), roomHtml);
+  roomBuilt = true;
+}
 
 fs.writeFileSync(path.join(DIST, "_headers"),
 `/*
@@ -238,7 +297,10 @@ const rows = cards.filter(c => c.type !== "audience").map(c => `
   <tr>
     <td class="slug">${c.slug}</td>
     <td class="v ${c.type}">${c.type === "real" ? "REAL" : "FAKE"}</td>
-    <td>${esc(c.headline)}${c.whyItWorks ? `<div class="why"><b>Why it works —</b> ${esc(c.whyItWorks)}</div>` : ""}</td>
+    <td>${esc(c.headline)}
+      ${c.whyItWorks ? `<div class="why"><b>Why it works —</b> ${esc(c.whyItWorks)}</div>` : ""}
+      ${c.verification ? `<div class="why"><b>Why it is true —</b> ${
+         c.verification.map(([l, t]) => `<i>${esc(l)}:</i> ${esc(t)}`).join(" ")}</div>` : ""}</td>
   </tr>`).join("");
 
 fs.writeFileSync(path.join(FACIL, "answer-key.html"), `<!DOCTYPE html>
@@ -280,6 +342,9 @@ console.log(`
   Deck version   ${version}
   Cards          ${counts.real} real · ${counts.fake} fake · ${counts.audience} audience  (${cards.length} total)
   Bundle         ${rel(path.join(DIST, "index.html"))}  ${kb(Buffer.byteLength(html))}  (deck inlined, works offline)
+  Room system    ${roomBuilt
+    ? `${rel(path.join(DIST, "room.html"))}  ->  ${SUPA_URL}`
+    : "not built (set SUPABASE_URL and SUPABASE_KEY to enable)"}
   QR codes       ${qrCount} SVGs in ${rel(path.join(FACIL, "qr"))}
                  contact sheet: ${rel(path.join(FACIL, "qr-test-sheet.html"))}
   Codes point to ${BASE_URL}#<slug>
